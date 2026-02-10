@@ -1,130 +1,129 @@
-<!doctype html>
-<html lang="zh-CN">
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>资料管理（上传 + 记录入库）</title>
-  <style>
-    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, "Noto Sans", sans-serif; margin: 24px; }
-    .container { max-width: 980px; margin: 0 auto; }
-    .card { border: 1px solid #e5e7eb; border-radius: 12px; padding: 16px; margin-bottom: 16px; }
-    .row { display: flex; gap: 12px; flex-wrap: wrap; }
-    label { display: block; font-size: 14px; margin-bottom: 6px; color: #111827; }
-    input[type="text"], select, input[type="file"] {
-      width: 320px; max-width: 100%;
-      padding: 10px; border-radius: 10px; border: 1px solid #d1d5db;
+{% extends "base.html" %}
+
+{% block title %}素材资料库{% endblock %}
+
+{% block head %}
+<style>
+    /* 资料库特有样式 (保留你之前的 CSS，但去掉了 body 和 nav-bar 的部分) */
+    .controls-card {
+        background: white; padding: 15px 25px; border-radius: 15px;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.05); display: flex; justify-content: space-between;
+        align-items: center; margin-bottom: 30px; flex-wrap: wrap; gap: 15px;
     }
-    button {
-      padding: 10px 14px; border-radius: 10px; border: 1px solid #111827;
-      background: #111827; color: #fff; cursor: pointer;
+    .tabs { display: flex; background: #f1f3f5; padding: 5px; border-radius: 10px; }
+    .tab-btn {
+        padding: 10px 25px; border: none; background: transparent; cursor: pointer;
+        border-radius: 8px; font-weight: 600; text-decoration: none; color: #666; transition: all 0.3s;
     }
-    button:disabled { opacity: .6; cursor: not-allowed; }
-    .hint { color: #6b7280; font-size: 13px; margin-top: 6px; }
-    table { width: 100%; border-collapse: collapse; }
-    th, td { padding: 10px; border-bottom: 1px solid #e5e7eb; text-align: left; font-size: 14px; }
-    th { color: #374151; font-weight: 600; }
-    .msg { padding: 10px 12px; border-radius: 10px; margin-bottom: 12px; }
-    .msg-ok { background: #ecfdf5; color: #065f46; border: 1px solid #a7f3d0; }
-    .msg-err { background: #fef2f2; color: #991b1b; border: 1px solid #fecaca; }
-    .tag { display: inline-block; padding: 2px 8px; border-radius: 999px; background: #f3f4f6; font-size: 12px; }
-    a { color: #2563eb; text-decoration: none; }
-    a:hover { text-decoration: underline; }
-  </style>
-</head>
+    .tab-btn:hover { color: #333; background: rgba(255,255,255,0.5); }
+    .tab-btn.active { background: white; color: #007bff; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+    
+    .upload-card {
+        background: white; padding: 30px; border-radius: 15px;
+        box-shadow: 0 10px 25px rgba(0,0,0,0.1); margin-bottom: 40px; border: 1px dashed #ced4da;
+    }
+    /* ...其余样式保持兼容... */
+    .bookshelf { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 25px; padding-bottom: 40px; }
+    .book-card { background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 10px rgba(0,0,0,0.05); transition: transform 0.3s; display: flex; flex-direction: column; position: relative; }
+    .book-card:hover { transform: translateY(-8px); box-shadow: 0 15px 30px rgba(0,0,0,0.15); }
+    .book-cover { height: 150px; background-color: #e9ecef; display: flex; align-items: center; justify-content: center; overflow: hidden; }
+    .book-cover img { width: 100%; height: 100%; object-fit: cover; }
+    .book-info { padding: 15px; flex-grow: 1; display: flex; flex-direction: column; }
+    .book-tag { background: #e3f2fd; color: #0d47a1; padding: 4px 8px; border-radius: 6px; font-size: 11px; font-weight: 700; align-self: flex-start; margin-bottom: 8px; }
+    .book-title { font-weight: 700; margin-bottom: 6px; font-size: 16px; color: #333; }
+    .book-meta { font-size: 12px; color: #999; margin-bottom: 15px; }
+    .delete-btn { position: absolute; top: 8px; right: 8px; background: rgba(255,255,255,0.95); color: #dc3545; border-radius: 50%; width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; font-weight: bold; cursor: pointer; text-decoration: none; }
+    .delete-btn:hover { background: #dc3545; color: white; }
+    .download-link { text-decoration: none; color: #007bff; font-weight: bold; font-size: 14px; margin-top: auto; }
+</style>
+{% endblock %}
 
-<body>
-<div class="container">
+{% block content %}
+<div class="max-w-[1200px] mx-auto p-6">
+    <h1 class="text-3xl font-black text-slate-700 text-center mb-8">📚 语言学习资料库</h1>
 
-  <h1>资料管理（上传 + 入库）</h1>
+    {% if error %} <div class="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mb-4 rounded">{{ error }}</div> {% endif %}
+    {% if success %} <div class="bg-green-100 border-l-4 border-green-500 text-green-700 p-4 mb-4 rounded">{{ success }}</div> {% endif %}
 
-  <!-- 可选：后端可传 success/error 字符串 -->
-  {% if success %}
-    <div class="msg msg-ok">{{ success }}</div>
-  {% endif %}
-  {% if error %}
-    <div class="msg msg-err">{{ error }}</div>
-  {% endif %}
+    <div class="controls-card">
+        <div class="tabs">
+            <a href="/library?tab=official&sort={{ sort_option }}" class="tab-btn {% if active_tab == 'official' %}active{% endif %}">🏛️ 官方推荐</a>
+            <a href="/library?tab=user&sort={{ sort_option }}" class="tab-btn {% if active_tab == 'user' %}active{% endif %}">☁️ 我的上传</a>
+        </div>
+        <form action="/library" method="GET" class="flex items-center gap-2">
+            <input type="hidden" name="tab" value="{{ active_tab }}">
+            <span class="text-sm font-bold text-slate-500">排序:</span>
+            <select name="sort" onchange="this.form.submit()" class="p-2 border rounded-lg bg-white text-sm">
+                <option value="newest" {% if sort_option == 'newest' %}selected{% endif %}>🕒 最新上传</option>
+                <option value="oldest" {% if sort_option == 'oldest' %}selected{% endif %}>📅 最早上传</option>
+                <option value="a-z" {% if sort_option == 'a-z' %}selected{% endif %}>🔤 名称 A-Z</option>
+            </select>
+        </form>
+    </div>
 
-  <div class="card">
-    <h2>上传资料</h2>
+    <div class="{% if active_tab != 'official' %}hidden{% endif %}">
+        {% if official_materials|length == 0 %}
+            <div class="text-center py-20 text-slate-400">暂无官方素材</div>
+        {% else %}
+            <div class="bookshelf">
+                {% for m in official_materials %}
+                <div class="book-card">
+                    <div class="book-cover">
+                        {% if m.cover_path %} <img src="/library/cover/{{ m.id }}"> {% else %} <span style="font-size:40px; opacity:0.3;">📖</span> {% endif %}
+                    </div>
+                    <div class="book-info">
+                        <span class="book-tag">{{ m.category }}</span>
+                        <div class="book-title">{{ m.filename }}</div>
+                        <div class="book-meta">📅 {{ m.upload_time[:10] }}</div>
+                        <a href="/library/download/{{ m.id }}" class="download-link">⬇️ 点击下载</a>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+    </div>
 
-    <!--
-      后端建议路由: POST /upload
-      表单字段:
-        - material_file: 对应 file
-        - uploader: 对应 add_file_to_db(... uploader=...)
-      注意：你当前 python 写死 category='User_Uploads'，所以下面 category 只是预留扩展
-    -->
-<form action="{{ url_for('library') }}"
-      method="post"
-      enctype="multipart/form-data">
-
-      <div class="row">
-        <div>
-          <label for="material_file">选择文件</label>
-          <input id="material_file" name="material_file" type="file"
-                 accept=".pdf,.docx,.xlsx,.pptx,.txt" required />
-          <div class="hint">允许：pdf / docx / xlsx / pptx / txt（与后端 ALLOWED_EXTENSIONS 一致）</div>
+    <div class="{% if active_tab != 'user' %}hidden{% endif %}">
+        <div class="upload-card">
+            <h3 class="text-lg font-bold text-slate-600 mb-4">⬆️ 上传新素材</h3>
+            <form method="POST" enctype="multipart/form-data" class="flex flex-wrap gap-4 items-end">
+                <div class="flex-1 min-w-[200px]">
+                    <label class="block text-xs font-bold text-slate-500 mb-1">文件</label>
+                    <input type="file" name="material_file" class="w-full p-2 bg-slate-50 border rounded" required>
+                </div>
+                <div class="flex-1 min-w-[200px]">
+                    <label class="block text-xs font-bold text-slate-500 mb-1">封面 (可选)</label>
+                    <input type="file" name="cover_file" accept="image/*" class="w-full p-2 bg-slate-50 border rounded">
+                </div>
+                <div class="flex-1 min-w-[200px]">
+                    <label class="block text-xs font-bold text-slate-500 mb-1">分类</label>
+                    <div class="flex gap-2">
+                        <select name="category_select" class="p-2 border rounded bg-white flex-1">
+                            {% for cat in categories %}<option value="{{ cat }}">{{ cat }}</option>{% endfor %}
+                        </select>
+                        <input type="text" name="category_new" placeholder="新建" class="p-2 border rounded w-24">
+                    </div>
+                </div>
+                <button type="submit" class="bg-green-600 text-white px-6 py-2.5 rounded font-bold hover:bg-green-700 transition">上传</button>
+            </form>
         </div>
 
-        <div>
-          <label for="uploader">上传者（可选）</label>
-          <input id="uploader" name="uploader" type="text" placeholder="例如：Xinyi" />
-          <div class="hint">不填则后端可默认使用 User / System</div>
+        <div class="bookshelf">
+            {% for m in user_materials %}
+            <div class="book-card">
+                <a href="/library/delete/{{ m.id }}" class="delete-btn" onclick="return confirm('确定删除？');">×</a>
+                <div class="book-cover">
+                    {% if m.cover_path %} <img src="/library/cover/{{ m.id }}"> {% else %} <span style="font-size:40px; opacity:0.3;">☁️</span> {% endif %}
+                </div>
+                <div class="book-info">
+                    <span class="book-tag">{{ m.category }}</span>
+                    <div class="book-title">{{ m.filename }}</div>
+                    <div class="book-meta">📅 {{ m.upload_time[:10] }}</div>
+                    <a href="/library/download/{{ m.id }}" class="download-link">⬇️ 点击下载</a>
+                </div>
+            </div>
+            {% endfor %}
         </div>
-
-        <div>
-          <label for="category">分类（预留扩展）</label>
-          <select id="category" name="category" disabled>
-            <option value="User_Uploads" selected>User_Uploads</option>
-          </select>
-          <div class="hint">你当前 Python 里 category 写死为 User_Uploads；需要可在后端放开</div>
-        </div>
-      </div>
-
-      <div style="margin-top: 14px;">
-        <button type="submit">上传并入库</button>
-      </div>
-    </form>
-  </div>
-
-  <div class="card">
-    <h2>资料列表</h2>
-    <div class="hint">需要后端从 SQLite 的 materials 表查询并传入 materials 列表。</div>
-
-    {% if materials and materials|length > 0 %}
-      <table>
-        <thead>
-          <tr>
-            <th>ID</th>
-            <th>文件名</th>
-            <th>分类</th>
-            <th>上传时间</th>
-            <th>上传者</th>
-            <th>操作</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for m in materials %}
-            <tr>
-              <td>{{ m.id }}</td>
-              <td>{{ m.filename }}</td>
-              <td><span class="tag">{{ m.category }}</span></td>
-              <td>{{ m.upload_time }}</td>
-              <td>{{ m.uploader }}</td>
-              <td>
-                <!-- 如果你后端提供下载路由，比如 /download/<id> -->
-                <a href="{{ url_for('download_material', material_id=m.id) }}">下载</a>
-              </td>
-            </tr>
-          {% endfor %}
-        </tbody>
-      </table>
-    {% else %}
-      <p>暂无资料记录。</p>
-    {% endif %}
-  </div>
-
+    </div>
 </div>
-</body>
-</html>
+{% endblock %}
