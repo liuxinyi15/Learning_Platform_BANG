@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>资料管理（上传 + 记录入库）</title>
+  <style>
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, "Noto Sans", sans-serif; margin: 24px; }
+    .container { max-width: 980px; margin: 0 auto; }
+    .card { border: 1px solid #e5e7eb; border-radius: 12px; padding: 16px; margin-bottom: 16px; }
+    .row { display: flex; gap: 12px; flex-wrap: wrap; }
+    label { display: block; font-size: 14px; margin-bottom: 6px; color: #111827; }
+    input[type="text"], select, input[type="file"] {
+      width: 320px; max-width: 100%;
+      padding: 10px; border-radius: 10px; border: 1px solid #d1d5db;
+    }
+    button {
+      padding: 10px 14px; border-radius: 10px; border: 1px solid #111827;
+      background: #111827; color: #fff; cursor: pointer;
+    }
+    button:disabled { opacity: .6; cursor: not-allowed; }
+    .hint { color: #6b7280; font-size: 13px; margin-top: 6px; }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { padding: 10px; border-bottom: 1px solid #e5e7eb; text-align: left; font-size: 14px; }
+    th { color: #374151; font-weight: 600; }
+    .msg { padding: 10px 12px; border-radius: 10px; margin-bottom: 12px; }
+    .msg-ok { background: #ecfdf5; color: #065f46; border: 1px solid #a7f3d0; }
+    .msg-err { background: #fef2f2; color: #991b1b; border: 1px solid #fecaca; }
+    .tag { display: inline-block; padding: 2px 8px; border-radius: 999px; background: #f3f4f6; font-size: 12px; }
+    a { color: #2563eb; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+  </style>
+</head>
+
+<body>
+<div class="container">
+
+  <h1>资料管理（上传 + 入库）</h1>
+
+  <!-- 可选：后端可传 success/error 字符串 -->
+  {% if success %}
+    <div class="msg msg-ok">{{ success }}</div>
+  {% endif %}
+  {% if error %}
+    <div class="msg msg-err">{{ error }}</div>
+  {% endif %}
+
+  <div class="card">
+    <h2>上传资料</h2>
+
+    <!--
+      后端建议路由: POST /upload
+      表单字段:
+        - material_file: 对应 file
+        - uploader: 对应 add_file_to_db(... uploader=...)
+      注意：你当前 python 写死 category='User_Uploads'，所以下面 category 只是预留扩展
+    -->
+<form action="{{ url_for('library') }}"
+      method="post"
+      enctype="multipart/form-data">
+
+      <div class="row">
+        <div>
+          <label for="material_file">选择文件</label>
+          <input id="material_file" name="material_file" type="file"
+                 accept=".pdf,.docx,.xlsx,.pptx,.txt" required />
+          <div class="hint">允许：pdf / docx / xlsx / pptx / txt（与后端 ALLOWED_EXTENSIONS 一致）</div>
+        </div>
+
+        <div>
+          <label for="uploader">上传者（可选）</label>
+          <input id="uploader" name="uploader" type="text" placeholder="例如：Xinyi" />
+          <div class="hint">不填则后端可默认使用 User / System</div>
+        </div>
+
+        <div>
+          <label for="category">分类（预留扩展）</label>
+          <select id="category" name="category" disabled>
+            <option value="User_Uploads" selected>User_Uploads</option>
+          </select>
+          <div class="hint">你当前 Python 里 category 写死为 User_Uploads；需要可在后端放开</div>
+        </div>
+      </div>
+
+      <div style="margin-top: 14px;">
+        <button type="submit">上传并入库</button>
+      </div>
+    </form>
+  </div>
+
+  <div class="card">
+    <h2>资料列表</h2>
+    <div class="hint">需要后端从 SQLite 的 materials 表查询并传入 materials 列表。</div>
+
+    {% if materials and materials|length > 0 %}
+      <table>
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>文件名</th>
+            <th>分类</th>
+            <th>上传时间</th>
+            <th>上传者</th>
+            <th>操作</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for m in materials %}
+            <tr>
+              <td>{{ m.id }}</td>
+              <td>{{ m.filename }}</td>
+              <td><span class="tag">{{ m.category }}</span></td>
+              <td>{{ m.upload_time }}</td>
+              <td>{{ m.uploader }}</td>
+              <td>
+                <!-- 如果你后端提供下载路由，比如 /download/<id> -->
+                <a href="{{ url_for('download_material', material_id=m.id) }}">下载</a>
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    {% else %}
+      <p>暂无资料记录。</p>
+    {% endif %}
+  </div>
+
+</div>
+</body>
+</html>

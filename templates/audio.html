@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>词汇听写音频生成器</title>
+</head>
+<body>
+    <h1>词汇听写音频生成器</h1>
+
+        <form action="/generate" method="post" enctype="multipart/form-data">
+    <label>上传Excel 文件（如果有英文和中文，请写列名‘English’和‘Chinese’；若只有英文，请写列名‘English’）：</label>
+<input type="file" name="file" accept=".xlsx,.xls" required>
+<br><br>
+
+<label>输入音频文件名（无需输入.mp3）：</label>
+<input type="text" name="filename" placeholder="请输入文件名" required>
+<br><br>
+
+<label>朗读速度（例如 -20% 表示慢 20%，+20% 表示快 20%，推荐输入-20%）：</label>
+<input type="text" name="rate" placeholder="例如 -20%" required>
+<br><br>
+<label>选择语音：</label>
+<select name="voice">
+    <option value="zh-CN-XiaoxiaoNeural">女声</option>
+    <option value="zh-CN-YunxiNeural">男声</option>
+</select>
+<br><br>
+
+<label>每组单词重复次数：</label>
+<input type="number" name="repeat" placeholder="例如 3" min="1" required>
+<br><br>
+
+<button type="submit">生成并下载音频</button>
+
+</form>
+
+</body>
+</html>
+
