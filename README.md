@@ -19,7 +19,7 @@
 
 ### BANG consists of **6** core modules, each distinguished by a unique theme color to represent different aspects of the teaching workflow:
 
-1. **📚 Material Library**
+- **📚 Material Library**
 
   Resource Management: Batch upload and manage teaching materials (PDFs, Docs, Audio).
 
@@ -27,7 +27,7 @@
 
   Smart Sorting: Organize resources by official/personal uploads or timeline.
 
-2. **📅 Lesson Planner**
+- **📅 Lesson Planner**
 
   Kanban Board: Drag-and-drop task management for daily lesson planning.
 
@@ -35,7 +35,7 @@
 
   Export: One-click export of lesson plans to CSV.
 
-3. **🔤 Vocab Master**
+- **🔤 Vocab Master**
 
   Dual Mode: Switch between Table View for editing and Flashcard View for review.
 
@@ -43,7 +43,7 @@
 
   Interactive Learning: 3D flip animations for effective vocabulary memorization.
 
-4. **🎧 Audio Studio**
+- **🎧 Audio Studio**
 
   Batch Synthesis: Convert Excel word lists into high-quality MP3 audio files.
 
@@ -51,7 +51,7 @@
 
   Powered By: Specialized TTS logic for language learning scenarios.
 
-5. **📝 Smart Grading**
+- **📝 Smart Grading**
 
   Auto-Correction: Upload student answer sheets and question banks for instant grading.
 
@@ -59,7 +59,7 @@
 
   Error Analysis: Automatic generation of error distribution charts and personal error books.
 
-6. **📊 Performance Analysis**
+- **📊 Performance Analysis**
 
   Multi-Level Dashboard: Switch between Grade Overview, Class Trends, and Student Tracker.
 
