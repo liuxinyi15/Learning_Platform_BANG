@@ -16,42 +16,42 @@ BANG is an all-in-one teaching workbench designed to empower language educators.
 ## ✨ Modules & Features
 BANG consists of 6 core modules, each distinguished by a unique theme color to represent different aspects of the teaching workflow:
 
-1. 📚 Material Library 
-    Resource Management: Batch upload and manage teaching materials (PDFs, Docs, Audio).
+- 📚 Material Library 
+  Resource Management: Batch upload and manage teaching materials (PDFs, Docs, Audio).
 
-    Visual Indexing: Auto-generated cover previews and category filtering.
+  Visual Indexing: Auto-generated cover previews and category filtering.
 
-    Smart Sorting: Organize resources by official/personal uploads or timeline.
+  Smart Sorting: Organize resources by official/personal uploads or timeline.
 
-2. 📅 Lesson Planner 
+- 📅 Lesson Planner 
   Kanban Board: Drag-and-drop task management for daily lesson planning.
 
   Progress Tracking: Mark tasks with priority levels (High/Medium/Low) and completion status.
 
   Export: One-click export of lesson plans to CSV.
 
-3. 🔤 Vocab Master 
+- 🔤 Vocab Master 
   Dual Mode: Switch between Table View for editing and Flashcard View for review.
 
   Custom Columns: Dynamically add new fields (e.g., Synonyms, Notes) to your word lists.
 
   Interactive Learning: 3D flip animations for effective vocabulary memorization.
 
-4. 🎧 Audio Studio
+- 🎧 Audio Studio
   Batch Synthesis: Convert Excel word lists into high-quality MP3 audio files.
 
   Customization: Adjust speech rate, voice type (Male/Female), and repetition count.
 
   Powered By: Specialized TTS logic for language learning scenarios.
 
-5. 📝 Smart Grading 
+- 📝 Smart Grading 
   Auto-Correction: Upload student answer sheets and question banks for instant grading.
 
   Fuzzy Matching: Intelligent recognition of question IDs (e.g., matching "Q1" with "QQ1").
 
   Error Analysis: Automatic generation of error distribution charts and personal error books.
 
-6. 📊 Performance Analysis 
+- 📊 Performance Analysis 
   Multi-Level Dashboard: Switch between Grade Overview, Class Trends, and Student Tracker.
 
   Visual Data: Integrated ECharts for trend lines, radar charts (ability models), and ranking bars.
@@ -59,7 +59,7 @@ BANG consists of 6 core modules, each distinguished by a unique theme color to r
   Historical Tracking: Compare performance across multiple exams to identify growth patterns.
 ---
 
-## 🛠️ Tech Stack (技术栈)
+## 🛠️ Tech Stack 
 - Backend: Python 3, Flask, Pandas, SQLite
 
 - Frontend: HTML5, Tailwind CSS, Vue.js 3, ECharts, SheetJS
