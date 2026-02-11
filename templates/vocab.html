@@ -108,47 +108,62 @@
                     </div>
                 </div>
 
-                <button @click="generateAudio" :disabled="isGenerating" class="w-full bg-white text-indigo-700 py-3 rounded-xl font-bold hover:bg-indigo-50 transition text-sm shadow-lg flex justify-center items-center gap-2">
-                    <span v-if="isGenerating">⏳ 生成中...</span>
-                    <span v-else>▶️ 生成 MP3</span>
-                </button>
+<button @click="generateAudio" :disabled="isGenerating" class="w-full bg-white text-indigo-700 py-3 rounded-xl font-bold hover:bg-indigo-50 transition text-sm shadow-lg flex justify-center items-center gap-2">
+    <span v-if="isGenerating">⏳ 生成中...</span>
+    <span v-else>
+        <span v-if="selectedWordIds.length > 0">▶️ 生成选中 ({{ selectedWordIds.length }})</span>
+        <span v-else>▶️ 生成全部 ({{ activeTasks.length }})</span>
+    </span>
+</button>
             </div>
         </div>
 
         <div class="lg:col-span-9">
                 <div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
                 <table class="w-full text-left border-collapse">
-                    <thead class="bg-amber-50/50 border-b border-amber-100 text-amber-900/50 text-[10px] uppercase font-bold">
-                        <tr>
-                            <th v-for="header in currentBoard.headers" :key="header" class="p-4 cursor-pointer hover:bg-amber-100/50 transition" @click="currentBoard.sortBy = header">
-                                {{ header }} <span v-if="currentBoard.sortBy === header" class="text-amber-600">⬇</span>
-                            </th>
-                            <th class="p-4 text-center">删除</th>
-                        </tr>
-                    </thead>
-                    <tbody class="divide-y divide-slate-50">
-                        <tr v-for="task in activeTasks" :key="task.id" class="hover:bg-amber-50/30 transition group">
-                            <td v-for="header in currentBoard.headers" :key="header" class="p-4 text-sm text-slate-700">
-                                <div v-if="isFrequencyField(header)" class="inline-block">
-                                    <span :class="getBadgeClass(task.data[header])" class="px-2 py-0.5 rounded text-[10px] font-bold border">
-                                        {{ task.data[header] }}
-                                    </span>
-                                </div>
-                                <div v-else class="outline-none min-h-[1.5em] border border-transparent focus:border-amber-200 focus:bg-white rounded p-1 transition" contenteditable="true" @blur="updateCellValue(task, header, $event)">
-                                    {{ task.data[header] }}
-                                </div>
-                            </td>
-                            <td class="p-4 text-center">
-                                <button @click="deletePermanent(task.id)" class="text-slate-300 hover:text-red-500 transition text-lg font-bold">×</button>
-                            </td>
-                        </tr>
-                        <tr v-if="activeTasks.length === 0">
-                            <td :colspan="currentBoard.headers.length + 1" class="p-12 text-center text-slate-300 italic">
-                                列表为空，请手动添加或点击左侧上传 Excel/CSV！
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
+    <thead class="bg-amber-50/50 border-b border-amber-100 text-amber-900/50 text-[10px] uppercase font-bold">
+        <tr>
+            <th class="p-4 w-12 text-center">
+                <input type="checkbox" v-model="isAllSelected" @change="toggleSelectAll" 
+                       class="w-4 h-4 rounded border-amber-300 text-amber-600 focus:ring-amber-500 cursor-pointer">
+            </th>
+            
+            <th v-for="header in currentBoard.headers" :key="header" class="p-4 cursor-pointer hover:bg-amber-100/50 transition" @click="currentBoard.sortBy = header">
+                {{ header }} <span v-if="currentBoard.sortBy === header" class="text-amber-600">⬇</span>
+            </th>
+            <th class="p-4 text-center">删除</th>
+        </tr>
+    </thead>
+    <tbody class="divide-y divide-slate-50">
+        <tr v-for="task in activeTasks" :key="task.id" class="hover:bg-amber-50/30 transition group"
+            :class="selectedWordIds.includes(task.id) ? 'bg-amber-50/60' : ''">
+            
+            <td class="p-4 text-center">
+                <input type="checkbox" :value="task.id" v-model="selectedWordIds" 
+                       class="w-4 h-4 rounded border-amber-300 text-amber-600 focus:ring-amber-500 cursor-pointer">
+            </td>
+
+            <td v-for="header in currentBoard.headers" :key="header" class="p-4 text-sm text-slate-700">
+                <div v-if="isFrequencyField(header)" class="inline-block">
+                    <span :class="getBadgeClass(task.data[header])" class="px-2 py-0.5 rounded text-[10px] font-bold border">
+                        {{ task.data[header] }}
+                    </span>
+                </div>
+                <div v-else class="outline-none min-h-[1.5em] border border-transparent focus:border-amber-200 focus:bg-white rounded p-1 transition" contenteditable="true" @blur="updateCellValue(task, header, $event)">
+                    {{ task.data[header] }}
+                </div>
+            </td>
+            <td class="p-4 text-center">
+                <button @click="deletePermanent(task.id)" class="text-slate-300 hover:text-red-500 transition text-lg font-bold">×</button>
+            </td>
+        </tr>
+        <tr v-if="activeTasks.length === 0">
+            <td :colspan="currentBoard.headers.length + 2" class="p-12 text-center text-slate-300 italic">
+                列表为空，请手动添加或点击左侧上传 Excel/CSV！
+            </td>
+        </tr>
+    </tbody>
+</table>
                 </div>
         </div>
     </div>
@@ -218,12 +233,31 @@
             const isGenerating = ref(false);
             const audioConfig = ref({ voice: 'zh-CN-XiaoxiaoNeural', rate: '-20%' });
 
+            // 🔥 新增：选中的单词ID数组
+            const selectedWordIds = ref([]);
+
             const activeTasks = computed(() => {
                 if (!currentBoard.value) return [];
                 return currentBoard.value.tasks;
             });
 
-            // 初始化表单
+            // 🔥 新增：全选状态计算属性
+            const isAllSelected = computed({
+                get: () => activeTasks.value.length > 0 && selectedWordIds.value.length === activeTasks.value.length,
+                set: (val) => {
+                    if (val) {
+                        selectedWordIds.value = activeTasks.value.map(t => t.id);
+                    } else {
+                        selectedWordIds.value = [];
+                    }
+                }
+            });
+
+            // 🔥 新增：全选切换函数 (用于 checkbox @change)
+            const toggleSelectAll = () => {
+                // 逻辑已在 computed set 中处理，这里只需占位或做额外逻辑
+            };
+
             const initForm = () => {
                 const data = {};
                 currentBoard.value?.headers.forEach(h => {
@@ -240,10 +274,12 @@
 
             watch(boards, (v) => localStorage.setItem(STORAGE_KEY, JSON.stringify(v)), { deep: true });
             
+            // 切换列表时清空选择
             watch(activeBoardIndex, () => {
                 initForm();
                 currentCardIdx.value = 0;
                 isFlipped.value = false;
+                selectedWordIds.value = []; // 清空选中
             });
 
             const isFrequencyField = (h) => {
@@ -251,71 +287,44 @@
                 return s.includes('frequency') || s.includes('importance') || s.includes('level') || s.includes('频率') || s.includes('重要性');
             };
 
-            // 🔥 新增：处理 Excel/CSV 上传 (使用 SheetJS)
             const handleFileUpload = async (event) => {
                 const file = event.target.files[0];
                 if (!file) return;
-
                 const reader = new FileReader();
                 reader.onload = (e) => {
                     const data = new Uint8Array(e.target.result);
                     const workbook = XLSX.read(data, { type: 'array' });
-                    
-                    // 读取第一个工作表
                     const firstSheetName = workbook.SheetNames[0];
                     const worksheet = workbook.Sheets[firstSheetName];
-                    
-                    // 转换为二维数组 (header:1 表示保留原始数组结构)
                     const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
-                    
-                    if (jsonData.length < 1) {
-                        alert("文件为空！");
-                        return;
-                    }
-
-                    // 1. 第一行作为表头
-                    const headers = jsonData[0].map(h => String(h).trim()); // 确保是字符串
-                    
-                    // 2. 剩余行作为数据
+                    if (jsonData.length < 1) { alert("文件为空！"); return; }
+                    const headers = jsonData[0].map(h => String(h).trim());
                     const newTasks = jsonData.slice(1).map((row, i) => {
                         let data = {};
-                        headers.forEach((h, idx) => {
-                            data[h] = row[idx] !== undefined ? String(row[idx]) : "";
-                        });
+                        headers.forEach((h, idx) => { data[h] = row[idx] !== undefined ? String(row[idx]) : ""; });
                         return { id: Date.now() + i, data };
                     });
-                    
-                    // 更新当前 Board
                     currentBoard.value.headers = headers;
                     currentBoard.value.tasks = newTasks;
-                    
                     initForm(); 
-                    alert(`成功导入 ${newTasks.length} 个条目！列名已更新为: ${headers.join(', ')}`);
+                    selectedWordIds.value = []; // 导入新数据后清空选中
+                    alert(`成功导入 ${newTasks.length} 个条目！`);
                     event.target.value = ''; 
                 };
                 reader.readAsArrayBuffer(file);
             };
 
-            // 🔥 新增：导出为 Excel
             const exportToExcel = () => {
-                if (!currentBoard.value || currentBoard.value.tasks.length === 0) {
-                    return alert("当前列表为空，无法导出");
-                }
-                
-                // 1. 准备数据
+                if (!currentBoard.value || currentBoard.value.tasks.length === 0) return alert("列表为空");
                 const headers = currentBoard.value.headers;
                 const data = currentBoard.value.tasks.map(t => {
                     const row = {};
                     headers.forEach(h => row[h] = t.data[h]);
                     return row;
                 });
-
-                // 2. 创建 Workbook
                 const worksheet = XLSX.utils.json_to_sheet(data, { header: headers });
                 const workbook = XLSX.utils.book_new();
                 XLSX.utils.book_append_sheet(workbook, worksheet, "Vocab List");
-
-                // 3. 下载文件
                 XLSX.writeFile(workbook, `${currentBoard.value.name}.xlsx`);
             };
 
@@ -331,12 +340,15 @@
             const createNewBoard = () => {
                 const name = prompt("New List Name:");
                 if(name) { 
-                    boards.value.push({ id: Date.now(), name, headers: [...defaultHeaders], tasks: [] }); 
+                    boards.value.push({ id: Date.now(), name, headers: [...defaultHeaders], tasks: [], sortBy: 'Frequency', sortOrder: 'desc' }); 
                     activeBoardIndex.value = boards.value.length - 1; 
                 }
             };
 
-            const deletePermanent = (id) => { currentBoard.value.tasks = currentBoard.value.tasks.filter(t => t.id !== id); };
+            const deletePermanent = (id) => { 
+                currentBoard.value.tasks = currentBoard.value.tasks.filter(t => t.id !== id); 
+                selectedWordIds.value = selectedWordIds.value.filter(sid => sid !== id); // 同时从选中列表中移除
+            };
             const deleteBoard = (idx) => { if(confirm("Delete this list?")) boards.value.splice(idx,1); }
             
             const getBadgeClass = (v) => {
@@ -349,16 +361,23 @@
             const nextCard = () => { isFlipped.value = false; setTimeout(() => { if (currentCardIdx.value < activeTasks.value.length - 1) currentCardIdx.value++; else currentCardIdx.value = 0; }, 200); };
             const prevCard = () => { isFlipped.value = false; setTimeout(() => { if (currentCardIdx.value > 0) currentCardIdx.value--; else currentCardIdx.value = activeTasks.value.length - 1; }, 200); };
 
+            // 🔥 核心修改：生成音频逻辑
             const generateAudio = async () => {
-                if (activeTasks.value.length === 0) return alert("List is empty!");
+                if (activeTasks.value.length === 0) return alert("列表为空！");
                 isGenerating.value = true;
                 
                 const keyEn = currentBoard.value.headers[0];
                 const keyZh = currentBoard.value.headers[1];
 
+                // 🔥 筛选逻辑：如果选中了，只生成选中的；否则生成全部
+                let itemsToProcess = activeTasks.value;
+                if (selectedWordIds.value.length > 0) {
+                    itemsToProcess = activeTasks.value.filter(t => selectedWordIds.value.includes(t.id));
+                }
+
                 const payload = {
-                    filename: currentBoard.value.name,
-                    items: activeTasks.value.map(t => ({
+                    filename: currentBoard.value.name + (selectedWordIds.value.length > 0 ? "_Selected" : ""), // 文件名加后缀
+                    items: itemsToProcess.map(t => ({
                         English: t.data[keyEn], 
                         Chinese: t.data[keyZh] 
                     })),
@@ -376,7 +395,7 @@
                     const url = window.URL.createObjectURL(blob);
                     const a = document.createElement('a');
                     a.href = url;
-                    a.download = `${currentBoard.value.name}.mp3`;
+                    a.download = `${payload.filename}.mp3`;
                     document.body.appendChild(a);
                     a.click();
                     a.remove();
@@ -390,6 +409,7 @@
             return { 
                 boards, activeBoardIndex, currentBoard, newTaskData, activeTasks, 
                 viewMode, currentCardIdx, isFlipped, audioConfig, isGenerating,
+                selectedWordIds, isAllSelected, toggleSelectAll, // 记得导出这几个新变量
                 addTask, createNewBoard, deletePermanent, deleteBoard,
                 updateCellValue, getBadgeClass, nextCard, prevCard, generateAudio,
                 handleFileUpload, exportToExcel, isFrequencyField
