@@ -19,7 +19,7 @@
 
 ### BANG consists of **6** core modules, each distinguished by a unique theme color to represent different aspects of the teaching workflow:
 
-- **📚 Material Library**
+1. **📚 Material Library**
 
   Resource Management: Batch upload and manage teaching materials (PDFs, Docs, Audio).
 
@@ -27,7 +27,7 @@
 
   Smart Sorting: Organize resources by official/personal uploads or timeline.
 
-- **📅 Lesson Planner**
+2. **📅 Lesson Planner**
 
   Kanban Board: Drag-and-drop task management for daily lesson planning.
 
@@ -35,7 +35,7 @@
 
   Export: One-click export of lesson plans to CSV.
 
-- **🔤 Vocab Master**
+3. **🔤 Vocab Master**
 
   Dual Mode: Switch between Table View for editing and Flashcard View for review.
 
@@ -43,7 +43,7 @@
 
   Interactive Learning: 3D flip animations for effective vocabulary memorization.
 
-- **🎧 Audio Studio**
+4. **🎧 Audio Studio**
 
   Batch Synthesis: Convert Excel word lists into high-quality MP3 audio files.
 
@@ -51,7 +51,7 @@
 
   Powered By: Specialized TTS logic for language learning scenarios.
 
-- **📝 Smart Grading**
+5. **📝 Smart Grading**
 
   Auto-Correction: Upload student answer sheets and question banks for instant grading.
 
@@ -59,7 +59,7 @@
 
   Error Analysis: Automatic generation of error distribution charts and personal error books.
 
-- **📊 Performance Analysis**
+6. **📊 Performance Analysis**
 
   Multi-Level Dashboard: Switch between Grade Overview, Class Trends, and Student Tracker.
 
@@ -76,7 +76,7 @@
 - **Authentication**: Flask-Login
 ---
 
-## 🚀 Quick Start (快速开始)
+## 🚀 Quick Start
 1. Clone the Repository
 ```Bash
 git clone https://github.com/your-username/bang-platform.git
@@ -110,7 +110,7 @@ Username: admin
 Password: admin123
 ```
 ---
-## 📂 Project Structure (项目结构)
+## 📂 Project Structure
 ```Bash
 BANG-Platform/
 ├── app.py                  # Main Application Entry & Routes
@@ -130,7 +130,7 @@ BANG-Platform/
 ```
 ---
 
-## 📢 Acknowledgements & License (致谢与许可)
+## 📢 License 
 ### **Project License**
 
 This project is licensed under the MIT License.
