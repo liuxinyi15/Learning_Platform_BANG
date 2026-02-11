@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>班级成绩可视化分析平台</title>
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+    <style>
+        /* 全局重置与大屏布局设定 */
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            background-color: #f0f2f5; 
+            margin: 0; 
+            padding: 0; 
+            height: 100vh; 
+            overflow: hidden; 
+            display: flex;
+        }
+
+        /* 左侧侧边栏 */
+        .sidebar {
+            width: 320px;
+            background-color: #ffffff;
+            border-right: 1px solid #e8e8e8;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            box-sizing: border-box;
+            box-shadow: 2px 0 8px rgba(0,0,0,0.05);
+            z-index: 10;
+            overflow-y: auto; 
+        }
+
+        .sidebar h1 {
+            font-size: 20px;
+            color: #2c3e50;
+            text-align: center;
+            margin-top: 0;
+            margin-bottom: 25px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #f0f2f5;
+        }
+
+        .action-box {
+            background: #fafafa;
+            border: 1px solid #eee;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+
+        .action-box h3 { margin-top: 0; font-size: 16px; color: #34495e; margin-bottom: 12px; }
+
+        input[type="text"], input[type="file"] {
+            width: 100%; box-sizing: border-box; padding: 8px; margin-bottom: 10px; border: 1px solid #d9d9d9; border-radius: 4px;
+        }
+
+        button.primary-btn {
+            width: 100%; background-color: #1890ff; color: white; border: none; padding: 10px; border-radius: 4px; cursor: pointer; font-weight: bold; transition: 0.3s;
+        }
+        button.primary-btn:hover { background-color: #40a9ff; }
+        button.success-btn { background-color: #52c41a; }
+        button.success-btn:hover { background-color: #73d13d; }
+
+        #examCheckboxes {
+            max-height: 180px; overflow-y: auto; border: 1px solid #e8e8e8; background: white; padding: 8px; border-radius: 4px; margin-bottom: 10px; font-size: 14px;
+        }
+        
+        .exam-item { display: flex; justify-content: space-between; align-items: center; padding: 4px 0; border-bottom: 1px dashed #f0f0f0; }
+        .exam-item:last-child { border-bottom: none; }
+        .del-btn { background: none; border: none; color: #ff4d4f; cursor: pointer; font-size: 12px; padding: 2px 5px; }
+        .del-btn:hover { background: #fff1f0; border-radius: 3px; }
+
+        #status { font-size: 13px; font-weight: bold; color: #ff4d4f; text-align: center; margin-top: auto; }
+
+        /* 右侧主内容区 */
+        .main-content {
+            flex: 1; padding: 20px; display: flex; flex-direction: column; box-sizing: border-box; min-width: 0; overflow-y: auto; 
+        }
+
+        .tabs { display: flex; gap: 15px; margin-bottom: 15px; }
+        .tab-btn {
+            padding: 10px 25px; font-size: 16px; font-weight: bold; color: #595959; background: #ffffff; border: 1px solid #d9d9d9; border-radius: 6px; cursor: pointer; transition: 0.3s;
+        }
+        .tab-btn.active { color: #1890ff; border-color: #1890ff; background: #e6f7ff; box-shadow: 0 2px 0 rgba(0,0,0,0.02); }
+
+        .chart-card { background: #ffffff; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); padding: 15px; box-sizing: border-box; position: relative; }
+
+        .tab-content { flex: 1; display: none; }
+        .tab-content.active { display: flex; }
+
+        /* ================= 核心修改：动态控制图表白框的显示与隐藏 ================= */
+        
+        /* 状态 1：默认状态（仅显示上方趋势图），使用Flex布局 */
+        #classTab.active {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            width: 100%;
+            padding-bottom: 20px;
+        }
+        #classTab { display: none; }
+        
+        #trendChartWrapper { width: 100%; height: 380px; } /* 默认给趋势图一个合适的独立高度 */
+
+        /* 默认隐藏下方的两个白框 */
+        #barChartWrapper, #radarChartWrapper { display: none; }
+
+        /* 状态 2：激活了对比功能（有对比数据时），自动切换为网格布局 */
+        #classTab.active.has-comparison {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            grid-template-rows: minmax(380px, auto) minmax(480px, auto);
+        }
+
+        /* 激活对比时，将三个图表安排进网格中，并显示下方图表 */
+        #classTab.active.has-comparison #trendChartWrapper { grid-column: 1 / 3; grid-row: 1 / 2; height: auto; }
+        #classTab.active.has-comparison #barChartWrapper { display: block; grid-column: 1 / 2; grid-row: 2 / 3; }
+        #classTab.active.has-comparison #radarChartWrapper { display: block; grid-column: 2 / 3; grid-row: 2 / 3; }
+        
+        /* ==================================================================== */
+
+        #studentTab { flex-direction: column; gap: 15px; min-height: 600px; padding-bottom: 20px; }
+        .student-controls { background: #fff; padding: 15px 20px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); display: flex; align-items: center; gap: 15px; }
+        .student-controls select { padding: 6px; border-radius: 4px; border: 1px solid #d9d9d9; font-size: 15px; }
+
+        .echarts-instance { width: 100%; height: 100%; }
+
+        .modal { display: none; position: fixed; z-index: 9999; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); backdrop-filter: blur(3px); }
+        .modal-content { background-color: #fff; margin: 5% auto; padding: 25px; border-radius: 12px; width: 90%; max-width: 600px; box-shadow: 0 5px 15px rgba(0,0,0,0.3); position: relative; }
+        .close { color: #aaa; position: absolute; right: 20px; top: 15px; font-size: 28px; font-weight: bold; cursor: pointer;}
+        .close:hover { color: #ff4d4f; }
+    </style>
+</head>
+<body>
+
+    <aside class="sidebar">
+        <h1>📊 班级成绩分析中台</h1>
+        <div class="action-box">
+            <h3>📂 历史考试对比 (可多选)</h3>
+            <div id="examCheckboxes"><span style="color:#999;">加载中...</span></div>
+            <button class="primary-btn success-btn" onclick="compareHistoryExams()">生成多维对比图表</button>
+        </div>
+        <div class="action-box">
+            <h3>📤 录入新成绩单</h3>
+            <input type="text" id="examName" placeholder="例如：2024期中考试" required />
+            <input type="file" id="fileInput" accept=".csv, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/vnd.ms-excel, .xlsx, .xls" />
+            <button class="primary-btn" onclick="uploadFile()">分析并保存记忆</button>
+        </div>
+        <p id="status"></p>
+    </aside>
+
+    <main class="main-content">
+        <div class="tabs">
+            <button class="tab-btn active" onclick="switchTab('class')" id="btnClass">🏫 班级整体分析</button>
+            <button class="tab-btn" onclick="switchTab('student')" id="btnStudent">🧑‍🎓 学生个体追踪</button>
+        </div>
+
+        <div id="classTab" class="tab-content active">
+            <div id="trendChartWrapper" class="chart-card">
+                <div id="trendChart" class="echarts-instance"></div>
+            </div>
+            <div id="barChartWrapper" class="chart-card">
+                <div id="barChart" class="echarts-instance"></div>
+            </div>
+            <div id="radarChartWrapper" class="chart-card">
+                <div id="radarChart" class="echarts-instance"></div>
+            </div>
+        </div>
+
+        <div id="studentTab" class="tab-content">
+            <div class="student-controls">
+                <span style="font-weight: bold; color: #2c3e50;">🎯 请选择追踪目标：</span>
+                <select id="studentSelect" onchange="updateStudentChart()">
+                    <option value="">-- 等待数据加载 --</option>
+                </select>
+                <select id="subjectSelect" onchange="updateStudentChart()">
+                    <option value="Total">📊 总分</option>
+                </select>
+            </div>
+            <div class="chart-card" style="flex: 1;">
+                <div id="studentTrendChart" class="echarts-instance"></div>
+            </div>
+        </div>
+    </main>
+
+    <div id="studentModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal()">&times;</span>
+            <h2 id="modalTitle" style="margin-top: 0; text-align: center; color: #2c3e50;">能力模型对比</h2>
+            <div id="modalChart" style="width: 100%; height: 400px;"></div>
+        </div>
+    </div>
+
+<script>
+    let barChart = echarts.init(document.getElementById('barChart'));
+    let radarChart = echarts.init(document.getElementById('radarChart'));
+    let trendChart = echarts.init(document.getElementById('trendChart'));
+    let studentTrendChart = echarts.init(document.getElementById('studentTrendChart'));
+    let modalChart = null;
+    let globalAnalysisData = null;
+
+    function switchTab(tabName) {
+        document.getElementById('classTab').classList.remove('active');
+        document.getElementById('studentTab').classList.remove('active');
+        document.getElementById('btnClass').classList.remove('active');
+        document.getElementById('btnStudent').classList.remove('active');
+
+        if (tabName === 'class') {
+            document.getElementById('classTab').classList.add('active');
+            document.getElementById('btnClass').classList.add('active');
+        } else {
+            document.getElementById('studentTab').classList.add('active');
+            document.getElementById('btnStudent').classList.add('active');
+        }
+
+        setTimeout(() => { trendChart.resize(); barChart.resize(); radarChart.resize(); studentTrendChart.resize(); }, 50);
+    }
+
+    window.onload = refreshExamList;
+
+    async function refreshExamList() {
+        try {
+            const response = await fetch('/api/exams');
+            const data = await response.json();
+            const container = document.getElementById('examCheckboxes');
+            container.innerHTML = '';
+            
+            if(data.success && data.exams.length > 0) {
+                data.exams.forEach(exam => {
+                    const div = document.createElement('div');
+                    div.className = 'exam-item';
+                    const label = document.createElement('label');
+                    label.innerHTML = `<input type="checkbox" value="${exam}" class="exam-checkbox"> ${exam}`;
+                    const delBtn = document.createElement('button');
+                    delBtn.className = 'del-btn';
+                    delBtn.innerText = '🗑️ 删除';
+                    delBtn.onclick = () => deleteExam(exam);
+                    div.appendChild(label);
+                    div.appendChild(delBtn);
+                    container.appendChild(div);
+                });
+                renderTrendChart(data.trend_data);
+            } else {
+                container.innerHTML = '<span style="color:#999;">暂无历史记录，请先录入。</span>';
+                trendChart.clear();
+                // 如果没有数据，确保下方白框隐藏
+                document.getElementById('classTab').classList.remove('has-comparison');
+            }
+        } catch(e) { console.error("加载列表失败", e); }
+    }
+
+    function renderTrendChart(trendData) {
+        const subjects = Object.keys(trendData.averages);
+        const trendSeries = subjects.map(subject => ({
+            name: subject, type: 'line', smooth: true, symbolSize: 8,
+            data: trendData.averages[subject]
+        }));
+        trendChart.setOption({
+            title: { text: '📈 班级历次考试平均分全局走势', left: 'center' }, tooltip: { trigger: 'axis' },
+            legend: { data: subjects, bottom: 0 },
+            grid: { left: '3%', right: '4%', bottom: '12%', top: '15%', containLabel: true },
+            xAxis: { type: 'category', boundaryGap: false, data: trendData.exams },
+            yAxis: { type: 'value' }, series: trendSeries
+        }, true);
+    }
+
+    async function deleteExam(examName) {
+        if(!confirm(`⚠️ 确定要彻底删除【${examName}】的历史记录吗？`)) return;
+        try {
+            const res = await fetch('/api/delete_exam', {
+                method: 'POST', headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({exam_name: examName})
+            });
+            const data = await res.json();
+            if(data.success) {
+                refreshExamList();
+                document.getElementById('status').innerText = `✅ 已成功删除：${examName}`;
+                barChart.clear(); radarChart.clear(); studentTrendChart.clear();
+                
+                // 核心逻辑：删除记录后，强制隐藏下方两个对比白框
+                document.getElementById('classTab').classList.remove('has-comparison');
+            }
+        } catch(e) { alert('删除失败，请检查网络。'); }
+    }
+
+    async function compareHistoryExams() {
+        const checkboxes = document.querySelectorAll('.exam-checkbox:checked');
+        const selectedExams = Array.from(checkboxes).map(cb => cb.value);
+        const statusText = document.getElementById('status');
+        if(selectedExams.length === 0) { statusText.innerText = '⚠️ 请先勾选至少一个考试！'; return; }
+
+        statusText.innerText = '正在生成多维对比图表...';
+        try {
+            const res = await fetch('/api/compare_exams', {
+                method: 'POST', headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({exam_names: selectedExams})
+            });
+            handleComparisonResponse(await res.json(), statusText);
+        } catch(e) { statusText.innerText = '请求失败，请检查服务。'; }
+    }
+
+    async function uploadFile() {
+        const fileInput = document.getElementById('fileInput');
+        const examName = document.getElementById('examName').value.trim();
+        const statusText = document.getElementById('status');
+        
+        if (!examName) { statusText.innerText = '⚠️ 请填写本次考试名称！'; return; }
+        if (fileInput.files.length === 0) { statusText.innerText = '⚠️ 请先选择一个文件！'; return; }
+
+        const formData = new FormData();
+        formData.append('file', fileInput.files[0]);
+        formData.append('exam_name', examName);
+        statusText.innerText = '正在处理数据...';
+
+        try {
+            const res = await fetch('/upload', { method: 'POST', body: formData });
+            handleComparisonResponse(await res.json(), statusText);
+            refreshExamList();
+        } catch (error) { statusText.innerText = '请求失败，请检查服务。'; }
+    }
+
+    function handleComparisonResponse(data, statusText) {
+        if (data.error) {
+            statusText.innerText = data.error;
+        } else {
+            statusText.innerText = `✅ 展示成功！当前对比：【${data.exam_names.join('】vs【')}】`;
+            globalAnalysisData = data;
+            
+            switchTab('class');
+            
+            // 核心逻辑：有对比数据传入时，为班级面板追加 class 以显示底部的两个图表白框
+            document.getElementById('classTab').classList.add('has-comparison');
+            
+            // 延时重算尺寸确保图表不挤压
+            setTimeout(() => { trendChart.resize(); barChart.resize(); radarChart.resize(); }, 50);
+            
+            renderComparisonCharts(data);
+        }
+        setTimeout(() => statusText.innerText = '', 5000);
+    }
+
+    function renderComparisonCharts(data) {
+        barChart.setOption({
+            title: { text: `🏆 班级总分排名对比 (按最后一场降序)`, left: 'center', textStyle: {fontSize: 15} }, 
+            tooltip: { trigger: 'axis' },
+            legend: { data: data.exam_names, bottom: 0 },
+            grid: { left: '3%', right: '4%', bottom: '15%', top: '15%', containLabel: true }, 
+            dataZoom: [
+                { type: 'slider', show: true, start: 0, end: 50, bottom: 25, height: 15 },
+                { type: 'inside', start: 0, end: 50 }
+            ],
+            xAxis: { type: 'category', data: data.students, axisLabel: { interval: 0, rotate: 35 } },
+            yAxis: { type: 'value' }, 
+            series: data.bar_series
+        }, true);
+
+        const indicator = data.valid_subjects.map(subject => ({ name: subject, max: data.max_scores[subject] + 5 }));
+        radarChart.setOption({
+            title: { text: `🎯 班级总体能力模型`, left: 'center', textStyle: {fontSize: 15} }, tooltip: {},
+            legend: { data: data.exam_names.map(e => e + ' 平均分'), bottom: 0 },
+            radar: { indicator: indicator, shape: 'polygon' },
+            series: [{ type: 'radar', data: data.radar_series }]
+        }, true);
+
+        const studentSelect = document.getElementById('studentSelect');
+        const subjectSelect = document.getElementById('subjectSelect');
+        
+        studentSelect.innerHTML = data.students.map(s => `<option value="${s}">${s}</option>`).join('');
+        let subjectOptions = `<option value="Total">📊 总计得分</option>`;
+        subjectOptions += data.valid_subjects.map(sub => `<option value="${sub}">📝 ${sub}</option>`).join('');
+        subjectSelect.innerHTML = subjectOptions;
+        
+        updateStudentChart();
+    }
+
+    function updateStudentChart() {
+        if (!globalAnalysisData) return;
+        const data = globalAnalysisData;
+        const studentName = document.getElementById('studentSelect').value;
+        const subject = document.getElementById('subjectSelect').value;
+        if (!studentName) return;
+
+        const exams = data.exam_names;
+        const scores = exams.map(exam => {
+            if (subject === 'Total') {
+                return data.valid_subjects.reduce((sum, sub) => sum + (data.student_details[studentName][exam][sub] || 0), 0);
+            } else {
+                return data.student_details[studentName][exam][subject] || 0;
+            }
+        });
+
+        const subjectLabel = subject === 'Total' ? '总分' : subject;
+        
+        studentTrendChart.setOption({
+            title: { text: `${studentName} - ${subjectLabel} 发展轨迹`, left: 'center', textStyle: {fontSize: 16, color: '#333'} },
+            tooltip: { trigger: 'axis' },
+            grid: { left: '5%', right: '5%', bottom: '5%', top: '15%', containLabel: true },
+            xAxis: { type: 'category', data: exams, axisLabel: { interval: 0, color: '#666' } },
+            yAxis: { type: 'value' },
+            series: [{
+                name: subjectLabel, type: 'line', smooth: false, symbolSize: 10, symbol: 'emptyCircle',
+                data: scores, label: { show: true, position: 'top', fontSize: 14, color: '#333' },
+                itemStyle: { color: '#e74c3c', borderWidth: 3 }, lineStyle: { width: 3, color: '#e74c3c' },
+                areaStyle: { color: 'rgba(231, 76, 60, 0.1)' }
+            }]
+        }, true);
+    }
+
+    barChart.on('click', function(params) { if(params.name) openModal(params.name); });
+    function openModal(studentName) {
+        const modal = document.getElementById('studentModal');
+        modal.style.display = 'block';
+        document.getElementById('modalTitle').innerText = `🧑‍🎓 ${studentName} 的能力模型对比`;
+
+        if (!modalChart) modalChart = echarts.init(document.getElementById('modalChart'));
+        const data = globalAnalysisData;
+        const indicator = data.valid_subjects.map(sub => ({ name: sub, max: data.max_scores[sub] + 5 }));
+        
+        const modalSeriesData = [];
+        const legendData = [];
+
+        data.exam_names.forEach((exam, index) => {
+            const stuVals = data.valid_subjects.map(sub => data.student_details[studentName][exam][sub]);
+            modalSeriesData.push({
+                value: stuVals, name: `${exam} (该生)`,
+                lineStyle: { width: 3 }, areaStyle: { opacity: 0.1 }
+            });
+            legendData.push(`${exam} (该生)`);
+        });
+
+        modalChart.setOption({
+            tooltip: { trigger: 'item' }, legend: { data: legendData, bottom: 0 },
+            radar: { indicator: indicator, shape: 'circle' },
+            series: [{ type: 'radar', data: modalSeriesData }]
+        }, true);
+        setTimeout(() => { modalChart.resize(); }, 100);
+    }
+    
+    function closeModal() { document.getElementById('studentModal').style.display = 'none'; }
+    window.onclick = function(event) { if (event.target == document.getElementById('studentModal')) closeModal(); }
+    
+    window.addEventListener('resize', function() { 
+        barChart.resize(); radarChart.resize(); trendChart.resize(); studentTrendChart.resize();
+        if(modalChart) modalChart.resize(); 
+    });
+</script>
+</body>
+</html>
