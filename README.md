@@ -1,106 +1,124 @@
+💥 BANG (Building Adaptive Next-Generation Growth Platform)
+📖 Introduction (项目介绍)
+BANG is an all-in-one teaching workbench designed to empower language educators.
 
-# 🎓 AI-Powered Language Education Platform - BANG
+What does BANG stand for?
 
-This is a modular education platform designed to assist teachers and students in English language education. The system integrates AI-generated exercises, audio generation, student performance tracking, and personalized error review — aiming to streamline lesson preparation and student progress management.
+English: Building Adaptive Next-Generation Growth Platform.
 
-## 🔍 Project Overview
+Chinese: The pronunciation echoes "帮" (Help) and "棒" (Excellence).
 
-The platform is built around four core modules:
+This dual meaning symbolizes our core mission: to support ("帮") learners and teachers, helping them achieve excellent ("棒") outcomes through adaptive technology and data-driven insights.
 
-### 1. 🔊 MP3 Vocabulary Audio Generator
-Generate high-quality MP3 vocabulary audio from Excel files with English-Chinese pairs.
-- Adjustable speed, repetition, and pause settings.
-- Based on Microsoft's Edge TTS API.
-- **👉 This module is developed as a standalone project** and integrated via the repository:  
-  [`liuxinyi15/EN-CH-word-transform-to-mp3`](https://github.com/liuxinyi15/EN-CH-word-transform-to-mp3)
+✨ Modules & Features (核心模块)
+BANG consists of 6 core modules, each distinguished by a unique theme color to represent different aspects of the teaching workflow:
 
-### 2. 📊 Student Score Tracking & Personalized Error Review
-Upload students' detailed results and automatically identify weak points:
-- Compares student scores with full marks per question.
-- Auto-generates each student's **personal error book** (错题本).
-- Supports visualized performance tracking over time (future version).
+1. 📚 Material Library (Amber)
+Resource Management: Batch upload and manage teaching materials (PDFs, Docs, Audio).
 
-### 3. 📚 Teacher Knowledge Base
-A lightweight, searchable content management system to store and tag:
-- Lesson prep materials (videos, images, exercises).
-- Teaching plans and annotations.
-- Curriculum-aligned documents and knowledge references.
+Visual Indexing: Auto-generated cover previews and category filtering.
 
-### 4. 🧠 AI Exercise Generator (Planned)
-Automatically generate custom practice questions based on:
-- A topic input
-- A reference passage or vocabulary list
-- Configurable question types (fill-in-the-blank, translation, grammar)
+Smart Sorting: Organize resources by official/personal uploads or timeline.
 
-> This module will connect to an AI API (e.g. OpenAI, Azure, or local models) and allow teachers to generate tailored exercises in seconds.
+2. 📅 Lesson Planner (Teal)
+Kanban Board: Drag-and-drop task management for daily lesson planning.
 
----
+Progress Tracking: Mark tasks with priority levels (High/Medium/Low) and completion status.
 
-## 💡 Use Cases
+Export: One-click export of lesson plans to CSV.
 
-- 🧑‍🏫 Teachers preparing multi-level lesson packs.
-- 🎯 Students receiving individualized feedback.
-- 📈 Schools managing assessment-based improvement loops.
+3. 🔤 Vocab Master (Lime)
+Dual Mode: Switch between Table View for editing and Flashcard View for review.
 
----
+Custom Columns: Dynamically add new fields (e.g., Synonyms, Notes) to your word lists.
 
-## 📁 Project Structure
+Interactive Learning: 3D flip animations for effective vocabulary memorization.
 
-```
-📦 education-platform
-├── mp3_audio/         # Linked submodule for vocabulary-to-audio
-├── error_analysis/    # CSV/Excel parser and wrong-question extractor
-├── knowledge_base/    # Teacher resource manager
-├── ai_question_gen/   # Placeholder for AI API-based generation (WIP)
-├── templates/         # HTML templates (if Flask/Streamlit UI exists)
-├── app.py             # Main app controller
-└── requirements.txt   # Required packages
-```
+4. 🎧 Audio Studio (Emerald)
+Batch Synthesis: Convert Excel word lists into high-quality MP3 audio files.
 
----
+Customization: Adjust speech rate, voice type (Male/Female), and repetition count.
 
-## ⚙️ Installation
+Powered By: Specialized TTS logic for language learning scenarios.
 
-```bash
-# Clone the main repository
-git clone https://github.com/YOUR_USERNAME/education-platform.git
-cd education-platform
+5. 📝 Smart Grading (Cyan)
+Auto-Correction: Upload student answer sheets and question banks for instant grading.
 
-# Clone the MP3 module sub-repo (or install it via pip if published)
-git submodule add https://github.com/liuxinyi15/EN-CH-word-transform-to-mp3 mp3_audio
+Fuzzy Matching: Intelligent recognition of question IDs (e.g., matching "Q1" with "QQ1").
 
-# Install dependencies
+Error Analysis: Automatic generation of error distribution charts and personal error books.
+
+6. 📊 Performance Analysis (Indigo)
+Multi-Level Dashboard: Switch between Grade Overview, Class Trends, and Student Tracker.
+
+Visual Data: Integrated ECharts for trend lines, radar charts (ability models), and ranking bars.
+
+Historical Tracking: Compare performance across multiple exams to identify growth patterns.
+
+🛠️ Tech Stack (技术栈)
+Backend: Python 3, Flask, Pandas, SQLite
+
+Frontend: HTML5, Tailwind CSS, Vue.js 3, ECharts, SheetJS
+
+Authentication: Flask-Login
+
+🚀 Quick Start (快速开始)
+1. Clone the Repository
+Bash
+git clone https://github.com/your-username/bang-platform.git
+cd bang-platform
+2. Set Up Virtual Environment
+Bash
+python -m venv venv
+# Windows
+venv\Scripts\activate
+# macOS/Linux
+source venv/bin/activate
+3. Install Dependencies
+Bash
 pip install -r requirements.txt
-```
+4. Run the Platform
+The database (platform.db) and necessary folders will be initialized automatically on the first run.
 
----
+Bash
+python app.py
+5. Access
+Open your browser and visit: http://127.0.0.1:5000
 
-## 🛠 Technologies Used
+Default Admin Credentials:
 
-- Python 3.10+
-- Flask or Streamlit (for UI)
-- pandas, openpyxl
-- edge-tts
-- GitHub Actions (for deployment/CI, optional)
-- CSV/Excel import/export
+Username: admin
 
----
+Password: admin123
 
-## 📌 License
+📂 Project Structure (项目结构)
+Plaintext
+BANG-Platform/
+├── app.py                  # Main Application Entry & Routes
+├── services/               # Business Logic
+│   ├── library_service.py  # Database & User Management
+│   ├── audio_service.py    # Audio Generation Logic
+│   └── performance_service.py # Data Analysis Logic
+├── templates/              # Frontend Templates (Jinja2)
+│   ├── base.html           # Global Layout
+│   ├── index.html          # Dashboard
+│   ├── performance.html    # Performance Module
+│   └── ...
+├── library/                # Static Resource Storage
+├── performance_data/       # CSV Data for Analysis
+├── platform.db             # SQLite Database
+└── README.md
+📢 Acknowledgements & License (致谢与许可)
+Project License
+This project is licensed under the MIT License.
 
-For commercial usage of the MP3 generator, please consult the license terms in [`EN-CH-word-transform-to-mp3`](https://github.com/liuxinyi15/EN-CH-word-transform-to-mp3).
+Special Credits: Audio Module
+The Audio Studio module (including audio_service.py and the underlying text-to-speech logic) is derived from and powered by the open-source project:
 
----
+Source: EN-CH-word-transform-to-mp3
 
-## ✨ Future Improvements
+Author: liuxinyi15
 
-- ✍️ Editable student feedback and teacher annotations
-- 📈 Score dashboards with plots
-- 🧑‍🎓 Student login system
-- 🤖 Fully integrated AI content generation
+We gratefully acknowledge the contribution of this repository in enabling the high-quality English-Chinese audio transformation features within BANG. The usage of the audio module follows the licensing terms specified in the original repository.
 
----
-
-## 📬 Contact
-
-Feel free to reach out via GitHub Issues or email for suggestions, contributions, or educational collaboration opportunities.
+BANG - Helping Learners Grow. 🚀
