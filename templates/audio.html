@@ -1,36 +1,41 @@
 {% extends "base.html" %}
 
-{% block title %}音频工坊{% endblock %}
+{% block title %}Audio Studio{% endblock %}
 
 {% block head %}
 <style>
     .fade-in-up { animation: fadeInUp 0.5s ease-out forwards; }
     @keyframes fadeInUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-    .input-field:focus { border-color: #10b981; box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1); } /* Emerald-500 */
+    .input-field:focus { border-color: #10b981; box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1); }
 </style>
 {% endblock %}
 
 {% block content %}
 <div class="max-w-[1200px] mx-auto p-6 fade-in-up">
     
-    <header class="text-center mb-10">
-        <div class="inline-flex items-center justify-center w-16 h-16 bg-emerald-100 text-emerald-700 rounded-2xl text-3xl mb-4 shadow-sm">
-            🎧
+    <header class="mb-10 bg-white p-8 rounded-3xl border border-slate-200 shadow-sm relative overflow-hidden text-center">
+        <div class="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-emerald-500 to-teal-500"></div>
+        <div class="absolute -left-10 -bottom-20 w-40 h-40 bg-emerald-50 rounded-full blur-3xl opacity-60"></div>
+
+        <div class="relative z-10">
+            <div class="inline-flex items-center justify-center w-16 h-16 bg-emerald-50 text-emerald-700 rounded-2xl text-3xl mb-4 shadow-sm border border-emerald-100">
+                🎧
+            </div>
+            <h1 class="text-3xl font-black text-slate-800 tracking-tight">Audio Studio</h1>
+            <p class="text-slate-500 mt-2 text-sm font-medium bg-slate-50 inline-block px-4 py-1 rounded-full border border-slate-100">
+                Batch Audio Synthesis · Professional Listening Materials
+            </p>
         </div>
-        <h1 class="text-3xl font-black text-slate-800 tracking-tight">音频工坊</h1>
-        <p class="text-slate-400 mt-2 text-sm font-medium">批量合成专业听力素材</p>
     </header>
 
     <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-        <div class="h-1.5 bg-gradient-to-r from-emerald-400 via-green-500 to-teal-500"></div>
-
         <form action="/generate" method="post" enctype="multipart/form-data" onsubmit="handleDownload()" class="p-8">
             <div class="grid grid-cols-1 lg:grid-cols-12 gap-10">
                 
                 <div class="lg:col-span-5 flex flex-col">
                     <h3 class="text-sm font-bold text-slate-700 uppercase tracking-wider mb-4 flex items-center gap-2">
                         <span class="bg-emerald-100 text-emerald-700 w-6 h-6 rounded-full flex items-center justify-center text-xs">1</span>
-                        上传数据源
+                        Upload Data Source
                     </h3>
                     
                     <div class="relative flex-1 group">
@@ -42,8 +47,8 @@
                             <div class="w-16 h-16 bg-white rounded-2xl shadow-sm flex items-center justify-center text-4xl mb-4 group-hover:scale-110 transition-transform duration-300">
                                 📂
                             </div>
-                            <h4 class="text-base font-bold text-slate-700 mb-1" id="file-label">点击或拖拽文件</h4>
-                            <p class="text-xs text-slate-400">支持 .xlsx, .xls 格式</p>
+                            <h4 class="text-base font-bold text-slate-700 mb-1" id="file-label">Click or Drag File</h4>
+                            <p class="text-xs text-slate-400">Supports .xlsx, .xls formats</p>
                         </div>
                     </div>
                 </div>
@@ -51,48 +56,48 @@
                 <div class="lg:col-span-7">
                     <h3 class="text-sm font-bold text-slate-700 uppercase tracking-wider mb-4 flex items-center gap-2">
                         <span class="bg-emerald-100 text-emerald-700 w-6 h-6 rounded-full flex items-center justify-center text-xs">2</span>
-                        生成配置
+                        Settings
                     </h3>
 
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div class="md:col-span-2">
-                            <label class="block text-xs font-bold text-slate-500 mb-2">输出文件名</label>
+                            <label class="block text-xs font-bold text-slate-500 mb-2">Output Filename</label>
                             <div class="relative">
                                 <span class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">🎵</span>
-                                <input type="text" name="filename" placeholder="例如: Unit1_Dictation" required
+                                <input type="text" name="filename" placeholder="e.g., Unit1_Dictation" required
                                        class="input-field w-full pl-9 pr-4 py-3 bg-white border border-slate-200 rounded-xl outline-none text-sm font-medium text-slate-700 transition">
                             </div>
                         </div>
                         <div>
-                            <label class="block text-xs font-bold text-slate-500 mb-2">朗读人声</label>
+                            <label class="block text-xs font-bold text-slate-500 mb-2">Voice</label>
                             <div class="relative">
                                 <select name="voice" class="input-field w-full px-4 py-3 bg-white border border-slate-200 rounded-xl outline-none text-sm font-medium text-slate-700 appearance-none cursor-pointer transition">
-                                    <option value="zh-CN-XiaoxiaoNeural">👩🏻 女声 (晓晓)</option>
-                                    <option value="zh-CN-YunxiNeural">👨🏻 男声 (云希)</option>
+                                    <option value="zh-CN-XiaoxiaoNeural">👩🏻 Female (Xiaoxiao)</option>
+                                    <option value="zh-CN-YunxiNeural">👨🏻 Male (Yunxi)</option>
                                 </select>
                                 <div class="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400 text-xs">▼</div>
                             </div>
                         </div>
                         <div>
-                            <label class="block text-xs font-bold text-slate-500 mb-2">朗读语速</label>
+                            <label class="block text-xs font-bold text-slate-500 mb-2">Speech Rate</label>
                             <div class="relative">
                                 <select name="rate" class="input-field w-full px-4 py-3 bg-white border border-slate-200 rounded-xl outline-none text-sm font-medium text-slate-700 appearance-none cursor-pointer transition">
-                                    <option value="-20%" selected>🐢 慢速 (-20%)</option>
-                                    <option value="+0%">🐰 正常速度</option>
-                                    <option value="+20%">🐎 快速 (+20%)</option>
+                                    <option value="-20%" selected>🐢 Slow (-20%)</option>
+                                    <option value="+0%">🐰 Normal</option>
+                                    <option value="+20%">🐎 Fast (+20%)</option>
                                 </select>
                                 <div class="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400 text-xs">▼</div>
                             </div>
                         </div>
                         <div class="md:col-span-2">
-                            <label class="block text-xs font-bold text-slate-500 mb-3">重复次数: <span id="repeat-val" class="text-emerald-600 font-bold">2</span> 次</label>
+                            <label class="block text-xs font-bold text-slate-500 mb-3">Repeat Count: <span id="repeat-val" class="text-emerald-600 font-bold">2</span> times</label>
                             <input type="range" name="repeat" min="1" max="5" value="2" class="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-emerald-500" oninput="document.getElementById('repeat-val').innerText = this.value">
                         </div>
                     </div>
 
                     <div class="mt-8 pt-6 border-t border-slate-100">
                         <button type="submit" id="genBtn" class="w-full py-4 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold text-lg shadow-lg shadow-emerald-200 transform transition-all duration-200 hover:scale-[1.01] flex items-center justify-center gap-2">
-                            <span>🚀</span> <span>开始生成</span>
+                            <span>🚀</span> <span>Generate Now</span>
                         </button>
                     </div>
                 </div>
@@ -109,7 +114,7 @@
             zone.classList.remove('border-slate-300', 'bg-slate-50/50');
             zone.classList.add('border-emerald-500', 'bg-emerald-50');
         } else {
-            label.innerText = "点击或拖拽文件";
+            label.innerText = "Click or Drag File";
             zone.classList.add('border-slate-300', 'bg-slate-50/50');
             zone.classList.remove('border-emerald-500', 'bg-emerald-50');
         }
@@ -118,11 +123,11 @@
         const btn = document.getElementById('genBtn');
         setTimeout(() => {
             btn.disabled = true;
-            btn.innerHTML = "⏳ 正在处理...";
+            btn.innerHTML = "⏳ Processing...";
             btn.classList.add('opacity-75', 'cursor-not-allowed');
             setTimeout(() => {
                 btn.disabled = false;
-                btn.innerHTML = "✅ 下载已开始";
+                btn.innerHTML = "✅ Download Started";
                 btn.classList.remove('opacity-75', 'cursor-not-allowed', 'bg-emerald-600', 'hover:bg-emerald-700');
                 btn.classList.add('bg-slate-800', 'hover:bg-slate-900');
             }, 5000);

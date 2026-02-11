@@ -5,7 +5,7 @@ from werkzeug.utils import secure_filename
 from werkzeug.security import generate_password_hash, check_password_hash
 
 # ===========================
-# 1. 数据库初始化
+# 1. Database Initialization
 # ===========================
 def init_db():
     conn = sqlite3.connect('platform.db')
@@ -32,14 +32,14 @@ def init_db():
         )
     ''')
     
-    # 自动创建默认管理员
+    # Create Default Admin
     try:
         cursor.execute("SELECT id FROM users WHERE username = 'admin'")
         if not cursor.fetchone():
             p_hash = generate_password_hash("admin123")
             cursor.execute("INSERT INTO users (username, password_hash, is_admin) VALUES (?, ?, ?)", 
                            ('admin', p_hash, 1))
-            print(">>> 默认管理员已创建: admin / admin123")
+            print(">>> Default Admin Created: admin / admin123")
     except Exception as e:
         print("Admin check error:", e)
 
@@ -47,10 +47,9 @@ def init_db():
     conn.close()
 
 # ===========================
-# 2. 用户管理 (核心升级)
+# 2. User Management
 # ===========================
 
-# 🔥 升级：增加 is_admin 参数，允许直接创建管理员
 def create_user(username, password, is_admin=0):
     conn = sqlite3.connect('platform.db')
     cursor = conn.cursor()
@@ -98,7 +97,6 @@ def get_all_users():
 def delete_user_by_id(user_id):
     conn = sqlite3.connect('platform.db')
     cursor = conn.cursor()
-    # 保护机制：ID为1的超级管理员不能删
     if user_id == 1:
         return False
     cursor.execute('DELETE FROM users WHERE id = ?', (user_id,))
@@ -106,18 +104,16 @@ def delete_user_by_id(user_id):
     conn.close()
     return True
 
-# 🔥 新增：修改用户角色 (提权/降权)
 def update_user_role(user_id, is_admin):
     conn = sqlite3.connect('platform.db')
     cursor = conn.cursor()
-    if user_id == 1: # 保护超级管理员
+    if user_id == 1: 
         return False
     cursor.execute('UPDATE users SET is_admin = ? WHERE id = ?', (is_admin, user_id))
     conn.commit()
     conn.close()
     return True
 
-# 🔥 新增：管理员强制重置密码
 def admin_reset_password(user_id, new_password):
     conn = sqlite3.connect('platform.db')
     cursor = conn.cursor()
@@ -128,7 +124,7 @@ def admin_reset_password(user_id, new_password):
     return True
 
 # ===========================
-# 3. 素材管理 (保持不变)
+# 3. Material Management
 # ===========================
 def get_all_categories():
     conn = sqlite3.connect('platform.db')

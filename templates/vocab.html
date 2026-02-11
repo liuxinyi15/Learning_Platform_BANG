@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}词汇特训营{% endblock %}
+{% block title %}Vocab Master{% endblock %}
 
 {% block head %}
 <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
@@ -16,37 +16,44 @@
 {% raw %}
 <div id="app" v-cloak class="max-w-[1200px] mx-auto p-6 fade-in-up">
     
-    <header class="text-center mb-10">
-        <div class="inline-flex items-center justify-center w-16 h-16 bg-lime-100 text-lime-600 rounded-2xl text-3xl mb-4 shadow-sm">
-            🔤
+    <header class="mb-10 bg-white p-8 rounded-3xl border border-slate-200 shadow-sm relative overflow-hidden text-center">
+        <div class="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-lime-600 to-emerald-600"></div>
+        <div class="absolute -right-10 -top-20 w-40 h-40 bg-lime-100 rounded-full blur-3xl opacity-50"></div>
+
+        <div class="relative z-10">
+            <div class="inline-flex items-center justify-center w-16 h-16 bg-lime-50 text-lime-800 rounded-2xl text-3xl mb-4 shadow-sm border border-lime-200">
+                🔤
+            </div>
+            <h1 class="text-3xl font-black text-slate-800 tracking-tight">Vocab Master</h1>
+            <p class="text-slate-500 mt-2 text-sm font-medium bg-slate-50 inline-block px-4 py-1 rounded-full border border-slate-100">
+                Build Word Lists · Flashcards · Listening Audio
+            </p>
         </div>
-        <h1 class="text-3xl font-black text-slate-800 tracking-tight">词汇特训营</h1>
-        <p class="text-slate-400 mt-2 text-sm font-medium">创建词汇表、生成闪卡与听力音频</p>
     </header>
 
     <div class="flex flex-col md:flex-row justify-between items-center gap-4 mb-8">
         <nav class="flex gap-2 overflow-x-auto pb-1 max-w-full">
             <div v-for="(board, index) in boards" :key="board.id" class="relative group flex items-center">
                 <button @click="activeBoardIndex = index" 
-                    :class="activeBoardIndex === index ? 'bg-lime-500 text-white shadow-md shadow-lime-200 transform -translate-y-0.5' : 'bg-white text-slate-500 hover:bg-slate-50 border border-slate-200'" 
+                    :class="activeBoardIndex === index ? 'bg-lime-700 text-white shadow-md shadow-lime-200 transform -translate-y-0.5' : 'bg-white text-slate-500 hover:bg-slate-50 border border-slate-200'" 
                     class="px-6 py-2.5 font-bold transition-all rounded-xl text-sm whitespace-nowrap">
                     {{ board.name }}
                 </button>
                 <button v-if="boards.length > 1" @click="deleteBoard(index)" class="absolute -top-2 -right-1 bg-white rounded-full w-5 h-5 flex items-center justify-center shadow-sm text-xs text-slate-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition border border-slate-200">×</button>
             </div>
-            <button @click="createNewBoard" class="px-4 text-lime-600 font-bold text-xl hover:bg-lime-50 rounded-lg transition">+</button>
+            <button @click="createNewBoard" class="px-4 text-lime-800 font-bold text-xl hover:bg-lime-50 rounded-lg transition">+</button>
         </nav>
 
         <div class="flex gap-3 flex-shrink-0">
             <button @click="exportToExcel" 
-                    class="bg-white text-lime-700 border border-lime-200 px-4 py-2.5 rounded-xl hover:bg-lime-50 font-bold transition shadow-sm hover:shadow-md text-sm">
-                📥 导出 Excel
+                    class="bg-white text-lime-800 border border-lime-200 px-4 py-2.5 rounded-xl hover:bg-lime-50 font-bold transition shadow-sm hover:shadow-md text-sm">
+                📥 Export Excel
             </button>
 
             <button @click="viewMode = viewMode === 'table' ? 'flashcard' : 'table'" 
-                    class="bg-lime-500 text-white px-5 py-2.5 rounded-xl hover:bg-lime-600 font-bold transition shadow-lg shadow-lime-200 text-sm flex items-center gap-2">
-                <span v-if="viewMode === 'table'">🎴 进入背诵</span>
-                <span v-else>📋 返回列表</span>
+                    class="bg-lime-700 text-white px-5 py-2.5 rounded-xl hover:bg-lime-800 font-bold transition shadow-lg shadow-lime-200 text-sm flex items-center gap-2">
+                <span v-if="viewMode === 'table'">🎴 Flashcards</span>
+                <span v-else>📋 Table View</span>
             </button>
         </div>
     </div>
@@ -61,8 +68,8 @@
                         <input v-model="newTaskData[header]" :placeholder="header" 
                                class="w-full border border-slate-200 p-3 rounded-xl outline-none text-sm bg-slate-50 focus:bg-white focus:ring-2 focus:ring-lime-100 focus:border-lime-400 transition">
                     </div>
-                    <button @click="addTask" class="w-full bg-lime-500 text-white py-3 rounded-xl font-bold hover:bg-lime-600 transition text-sm shadow-md">
-                        添加单词
+                    <button @click="addTask" class="w-full bg-lime-700 text-white py-3 rounded-xl font-bold hover:bg-lime-600 transition text-sm shadow-md">
+                        Add to List
                     </button>
                 </div>
             </div>
@@ -71,12 +78,12 @@
                 <h3 class="font-bold text-slate-400 uppercase text-[10px] tracking-widest mb-4">Import</h3>
                 <label class="block w-full border-2 border-dashed border-lime-200 p-6 rounded-xl text-center cursor-pointer hover:border-lime-500 hover:bg-lime-50 transition group">
                     <div class="text-2xl mb-2 group-hover:scale-110 transition">📂</div>
-                    <span class="text-xs text-lime-700 font-bold block">上传 Excel / CSV</span>
+                    <span class="text-xs text-lime-800 font-bold block">Upload Excel / CSV</span>
                     <input type="file" @change="handleFileUpload" accept=".csv, .xlsx, .xls" class="hidden">
                 </label>
             </div>
 
-            <div class="bg-gradient-to-br from-lime-500 to-green-600 p-6 rounded-2xl shadow-xl text-white">
+            <div class="bg-gradient-to-br from-lime-700 to-emerald-800 p-6 rounded-2xl shadow-xl text-white">
                 <h3 class="font-bold text-white/80 uppercase text-[10px] tracking-widest mb-4 border-b border-white/20 pb-2">🎧 Generate Audio</h3>
                 
                 <div class="space-y-4 mb-6">
@@ -87,7 +94,6 @@
                             <option value="zh-CN-YunxiNeural" class="text-black">👨🏻 Male (Yunxi)</option>
                         </select>
                     </div>
-
                     <div>
                         <label class="text-[10px] font-bold uppercase opacity-70 block mb-1">Speed</label>
                         <select v-model="audioConfig.rate" class="w-full bg-black/20 border border-white/10 text-xs rounded-lg p-2 text-white outline-none focus:bg-black/30 cursor-pointer">
@@ -98,28 +104,26 @@
                     </div>
                 </div>
 
-                <button @click="generateAudio" :disabled="isGenerating" class="w-full bg-white text-lime-700 py-3 rounded-xl font-bold hover:bg-lime-50 transition text-sm shadow-lg flex items-center justify-center gap-2">
-                    <span v-if="isGenerating">⏳ 生成中...</span>
-                    <span v-else>{{ selectedWordIds.length > 0 ? `▶️ 生成选中 (${selectedWordIds.length})` : `▶️ 生成全部` }}</span>
+                <button @click="generateAudio" :disabled="isGenerating" class="w-full bg-white text-lime-800 py-3 rounded-xl font-bold hover:bg-lime-50 transition text-sm shadow-lg flex items-center justify-center gap-2">
+                    <span v-if="isGenerating">⏳ Generating...</span>
+                    <span v-else>{{ selectedWordIds.length > 0 ? `▶️ Generate Selected (${selectedWordIds.length})` : `▶️ Generate All` }}</span>
                 </button>
             </div>
         </div>
 
         <div class="lg:col-span-9">
             <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-                <div class="h-1.5 bg-gradient-to-r from-lime-300 via-green-400 to-lime-300"></div>
-
                 <table class="w-full text-left border-collapse">
                     <thead class="bg-slate-50 border-b border-slate-200 text-slate-500 text-[10px] uppercase font-bold">
                         <tr>
-                            <th class="p-4 w-12 text-center"><input type="checkbox" v-model="isAllSelected" class="accent-lime-600 w-4 h-4"></th>
-                            <th v-for="header in currentBoard.headers" :key="header" class="p-4 cursor-pointer hover:text-lime-600">{{ header }}</th>
+                            <th class="p-4 w-12 text-center"><input type="checkbox" v-model="isAllSelected" class="accent-lime-700 w-4 h-4"></th>
+                            <th v-for="header in currentBoard.headers" :key="header" class="p-4 cursor-pointer hover:text-lime-800">{{ header }}</th>
                             <th class="p-4 text-center">Del</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-slate-100">
                         <tr v-for="task in activeTasks" :key="task.id" class="hover:bg-lime-50/30 transition group" :class="selectedWordIds.includes(task.id) ? 'bg-lime-50/50' : ''">
-                            <td class="p-4 text-center"><input type="checkbox" :value="task.id" v-model="selectedWordIds" class="accent-lime-600 w-4 h-4"></td>
+                            <td class="p-4 text-center"><input type="checkbox" :value="task.id" v-model="selectedWordIds" class="accent-lime-700 w-4 h-4"></td>
                             <td v-for="header in currentBoard.headers" :key="header" class="p-4 text-sm text-slate-700" contenteditable="true" @blur="updateCellValue(task, header, $event)">
                                 {{ task.data[header] }}
                             </td>
@@ -135,7 +139,6 @@
 <script>
     const { createApp, ref, computed, watch, onMounted } = Vue;
     const STORAGE_KEY = 'VOCAB_MASTER_V3';
-    // JS 逻辑与之前完全一致
     const parseCSVLine = (text) => { const result = []; let cell = ''; let inQuotes = false; for (let i = 0; i < text.length; i++) { let char = text[i]; if (char === '"') inQuotes = !inQuotes; else if (char === ',' && !inQuotes) { result.push(cell.trim()); cell = ''; } else cell += char; } result.push(cell.trim()); return result.map(v => v.replace(/^"|"$/g, '')); };
     createApp({
         setup() {
@@ -151,13 +154,13 @@
             onMounted(() => { const saved = localStorage.getItem(STORAGE_KEY); if (saved) boards.value = JSON.parse(saved); initForm(); });
             watch(boards, (v) => localStorage.setItem(STORAGE_KEY, JSON.stringify(v)), { deep: true });
             watch(activeBoardIndex, () => { initForm(); selectedWordIds.value = []; });
-            const handleFileUpload = async (event) => { const file = event.target.files[0]; if (!file) return; const reader = new FileReader(); reader.onload = (e) => { const data = new Uint8Array(e.target.result); const workbook = XLSX.read(data, { type: 'array' }); const firstSheetName = workbook.SheetNames[0]; const worksheet = workbook.Sheets[firstSheetName]; const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 }); if (jsonData.length < 1) return; const headers = jsonData[0].map(h => String(h).trim()); const newTasks = jsonData.slice(1).map((row, i) => { let data = {}; headers.forEach((h, idx) => { data[h] = row[idx] !== undefined ? String(row[idx]) : ""; }); return { id: Date.now() + i, data }; }); currentBoard.value.headers = headers; currentBoard.value.tasks = newTasks; initForm(); selectedWordIds.value = []; alert('导入成功'); event.target.value = ''; }; reader.readAsArrayBuffer(file); };
+            const handleFileUpload = async (event) => { const file = event.target.files[0]; if (!file) return; const reader = new FileReader(); reader.onload = (e) => { const data = new Uint8Array(e.target.result); const workbook = XLSX.read(data, { type: 'array' }); const firstSheetName = workbook.SheetNames[0]; const worksheet = workbook.Sheets[firstSheetName]; const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 }); if (jsonData.length < 1) return; const headers = jsonData[0].map(h => String(h).trim()); const newTasks = jsonData.slice(1).map((row, i) => { let data = {}; headers.forEach((h, idx) => { data[h] = row[idx] !== undefined ? String(row[idx]) : ""; }); return { id: Date.now() + i, data }; }); currentBoard.value.headers = headers; currentBoard.value.tasks = newTasks; initForm(); selectedWordIds.value = []; alert('Import Successful'); event.target.value = ''; }; reader.readAsArrayBuffer(file); };
             const exportToExcel = () => { if (!currentBoard.value) return; const headers = currentBoard.value.headers; const data = currentBoard.value.tasks.map(t => { const row = {}; headers.forEach(h => row[h] = t.data[h]); return row; }); const worksheet = XLSX.utils.json_to_sheet(data, { header: headers }); const workbook = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(workbook, worksheet, "List"); XLSX.writeFile(workbook, `${currentBoard.value.name}.xlsx`); };
             const addTask = () => { currentBoard.value.tasks.push({ id: Date.now(), data: {...newTaskData.value} }); initForm(); };
             const updateCellValue = (task, header, e) => { task.data[header] = e.target.innerText.trim(); };
-            const createNewBoard = () => { const name = prompt("Name:"); if(name) { boards.value.push({ id: Date.now(), name, headers: [...defaultHeaders], tasks: [] }); activeBoardIndex.value = boards.value.length - 1; } };
+            const createNewBoard = () => { const name = prompt("Board Name:"); if(name) { boards.value.push({ id: Date.now(), name, headers: [...defaultHeaders], tasks: [] }); activeBoardIndex.value = boards.value.length - 1; } };
             const deletePermanent = (id) => { currentBoard.value.tasks = currentBoard.value.tasks.filter(t => t.id !== id); selectedWordIds.value = selectedWordIds.value.filter(sid => sid !== id); };
-            const deleteBoard = (idx) => { if(confirm("Delete?")) boards.value.splice(idx,1); };
+            const deleteBoard = (idx) => { if(confirm("Delete this board?")) boards.value.splice(idx,1); };
             const generateAudio = async () => { if (activeTasks.value.length === 0) return; isGenerating.value = true; const keyEn = currentBoard.value.headers[0]; const keyZh = currentBoard.value.headers[1]; let itemsToProcess = activeTasks.value; if (selectedWordIds.value.length > 0) { itemsToProcess = activeTasks.value.filter(t => selectedWordIds.value.includes(t.id)); } const payload = { filename: currentBoard.value.name, items: itemsToProcess.map(t => ({ English: t.data[keyEn], Chinese: t.data[keyZh] })), voice: audioConfig.value.voice, rate: audioConfig.value.rate }; try { const response = await fetch('/api/generate_audio_json', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) }); if (!response.ok) throw new Error("Failed"); const blob = await response.blob(); const url = window.URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = `${payload.filename}.mp3`; document.body.appendChild(a); a.click(); a.remove(); } catch (e) { alert(e.message); } finally { isGenerating.value = false; } };
             return { boards, activeBoardIndex, currentBoard, newTaskData, activeTasks, viewMode, currentCardIdx, isFlipped, audioConfig, isGenerating, selectedWordIds, isAllSelected, toggleSelectAll, addTask, createNewBoard, deletePermanent, deleteBoard, updateCellValue, generateAudio, handleFileUpload, exportToExcel };
         }

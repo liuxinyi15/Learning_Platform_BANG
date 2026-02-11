@@ -1,25 +1,32 @@
 {% extends "base.html" %}
 
-{% block title %}备课管理{% endblock %}
+{% block title %}Lesson Planner{% endblock %}
 
 {% block content %}
 {% raw %}
 <div id="app" v-cloak class="max-w-[1200px] mx-auto p-6 fade-in-up">
     
-    <header class="text-center mb-10">
-        <div class="inline-flex items-center justify-center w-16 h-16 bg-orange-100 text-orange-500 rounded-2xl text-3xl mb-4 shadow-sm border border-orange-200">
-            📅
+    <header class="mb-10 bg-white p-8 rounded-3xl border border-slate-100 shadow-sm relative overflow-hidden text-center">
+        <div class="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-teal-500 to-emerald-500"></div>
+        <div class="absolute -left-10 -bottom-20 w-40 h-40 bg-teal-50 rounded-full blur-3xl opacity-60"></div>
+        
+        <div class="relative z-10">
+            <div class="inline-flex items-center justify-center w-16 h-16 bg-teal-50 text-teal-700 rounded-2xl text-3xl mb-4 shadow-sm border border-teal-100">
+                📅
+            </div>
+            <h1 class="text-3xl font-black text-slate-800 tracking-tight">Lesson Planner</h1>
+            <p class="text-slate-500 mt-2 text-sm font-medium bg-slate-50 inline-block px-4 py-1 rounded-full border border-slate-100">
+                Track Teaching Progress · Daily Planning
+            </p>
         </div>
-        <h1 class="text-3xl font-black text-slate-800 tracking-tight">备课管理</h1>
-        <p class="text-slate-400 mt-2 text-sm font-medium">追踪教学进度，安排每日重点备课任务</p>
     </header>
 
     <div class="flex flex-col md:flex-row justify-between items-center gap-4 mb-8">
         <nav class="flex gap-2 overflow-x-auto pb-1 max-w-full">
             <div v-for="(board, index) in boards" :key="board.id" class="relative group flex items-center">
-                <input v-if="editingBoardIdx === index" v-model="board.name" @blur="editingBoardIdx = null" @keyup.enter="editingBoardIdx = null" class="px-6 py-2.5 rounded-xl shadow-inner outline-none font-bold text-orange-500 bg-white min-w-[120px]" auto-focus>
+                <input v-if="editingBoardIdx === index" v-model="board.name" @blur="editingBoardIdx = null" @keyup.enter="editingBoardIdx = null" class="px-6 py-2.5 rounded-xl shadow-inner outline-none font-bold text-teal-700 bg-white min-w-[120px]" auto-focus>
                 <button v-else @click="activeBoardIndex = index" @dblclick="editingBoardIdx = index" 
-                    :class="activeBoardIndex === index ? 'bg-orange-400 text-white shadow-md shadow-orange-200 transform -translate-y-0.5' : 'bg-white text-slate-500 hover:bg-slate-50 border border-slate-200'" 
+                    :class="activeBoardIndex === index ? 'bg-teal-600 text-white shadow-md shadow-teal-200/50 transform -translate-y-0.5' : 'bg-white text-slate-500 hover:bg-slate-50 border border-slate-200'" 
                     class="px-6 py-2.5 font-bold transition-all rounded-xl text-sm whitespace-nowrap">
                     {{ board.name }}
                 </button>
@@ -28,45 +35,43 @@
         </nav>
 
         <div class="flex gap-3 flex-shrink-0">
-            <button @click="exportToCSV" class="bg-white text-orange-500 border border-orange-200 px-4 py-2.5 rounded-xl hover:bg-orange-50 font-bold transition shadow-sm text-sm flex items-center gap-2">
-                📥 导出 CSV
+            <button @click="exportToCSV" class="bg-white text-teal-700 border border-teal-200 px-4 py-2.5 rounded-xl hover:bg-teal-50 font-bold transition shadow-sm text-sm flex items-center gap-2">
+                📥 Export CSV
             </button>
-            <button @click="createNewBoard" class="bg-orange-400 text-white px-5 py-2.5 rounded-xl hover:bg-orange-500 font-bold transition shadow-lg shadow-orange-100 text-sm flex items-center gap-2">
-                <span>+</span> 新建任务板
+            <button @click="createNewBoard" class="bg-teal-600 text-white px-5 py-2.5 rounded-xl hover:bg-teal-700 font-bold transition shadow-lg shadow-teal-100 text-sm flex items-center gap-2">
+                <span>+</span> New Board
             </button>
         </div>
     </div>
 
     <div v-if="currentBoard" class="grid grid-cols-1 lg:grid-cols-12 gap-8">
-        
         <div class="lg:col-span-3 space-y-6">
             <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
                 <h3 class="font-bold text-slate-400 uppercase text-[10px] tracking-widest mb-4 flex items-center gap-2">
-                    <span class="text-orange-400">✏️</span> Add Task
+                    <span class="text-teal-600">✏️</span> Add Task
                 </h3>
                 <div class="space-y-4">
                     <div v-for="header in currentBoard.headers" :key="header">
                         <label class="block text-[11px] font-bold text-slate-500 mb-1.5 uppercase ml-1">{{ header }}</label>
                         <select v-if="isPriorityField(header)" v-model="newTaskData[header]" 
-                                class="w-full border border-slate-200 p-3 rounded-xl text-sm bg-slate-50 focus:bg-white focus:ring-2 focus:ring-orange-100 focus:border-orange-300 outline-none transition appearance-none">
+                                class="w-full border border-slate-200 p-3 rounded-xl text-sm bg-slate-50 focus:bg-white focus:ring-2 focus:ring-teal-100 focus:border-teal-300 outline-none transition appearance-none">
                             <option value="High">🔴 High Priority</option>
                             <option value="Medium">🟡 Medium</option>
                             <option value="Low">🔵 Low</option>
                         </select>
                         <input v-else v-model="newTaskData[header]" :placeholder="header" 
-                               class="w-full border border-slate-200 p-3 rounded-xl outline-none text-sm bg-slate-50 focus:bg-white focus:ring-2 focus:ring-orange-100 focus:border-orange-300 transition">
+                               class="w-full border border-slate-200 p-3 rounded-xl outline-none text-sm bg-slate-50 focus:bg-white focus:ring-2 focus:ring-teal-100 focus:border-teal-300 transition">
                     </div>
                     <button @click="addTask" class="w-full bg-slate-800 text-white py-3 rounded-xl font-bold hover:bg-slate-900 transition text-sm shadow-lg transform active:scale-95 duration-200">
-                        添加任务
+                        Add Task
                     </button>
                 </div>
             </div>
-
-            <div class="bg-orange-50/50 p-6 rounded-2xl border border-orange-100 border-dashed text-center hover:border-orange-300 transition cursor-pointer group">
+            <div class="bg-teal-50/50 p-6 rounded-2xl border border-teal-100 border-dashed text-center hover:border-teal-300 transition cursor-pointer group">
                 <label class="cursor-pointer block">
                     <div class="text-3xl mb-2 group-hover:scale-110 transition">📂</div>
-                    <span class="text-xs text-orange-500 font-bold block mb-1">导入数据</span>
-                    <p class="text-[10px] text-orange-300">支持 CSV 格式</p>
+                    <span class="text-xs text-teal-700 font-bold block mb-1">Import Data</span>
+                    <p class="text-[10px] text-teal-400">Supports CSV format</p>
                     <input type="file" @change="handleFileUpload" accept=".csv" class="hidden">
                 </label>
             </div>
@@ -76,39 +81,35 @@
             <section>
                 <div class="flex justify-between items-center mb-5">
                     <div class="flex items-center gap-3">
-                        <h2 class="text-xl font-bold text-slate-700">进行中任务</h2>
-                        <span class="bg-orange-50 text-orange-500 px-2.5 py-1 rounded-lg text-xs font-bold border border-orange-100">{{ activeTasks.length }}</span>
+                        <h2 class="text-xl font-bold text-slate-700">Active Tasks</h2>
+                        <span class="bg-teal-50 text-teal-700 px-2.5 py-1 rounded-lg text-xs font-bold border border-teal-100">{{ activeTasks.length }}</span>
                     </div>
-                    
                     <div class="flex items-center gap-2">
                         <div v-show="selectedActiveIds.length > 0" class="flex gap-2 animate-fade-in">
-                            <button @click="batchArchive" class="text-xs bg-emerald-100 text-emerald-700 px-3 py-1.5 rounded-lg font-bold hover:bg-emerald-200 transition">完成</button>
-                            <button @click="batchDelete('active')" class="text-xs bg-red-100 text-red-700 px-3 py-1.5 rounded-lg font-bold hover:bg-red-200 transition">删除</button>
+                            <button @click="batchArchive" class="text-xs bg-emerald-100 text-emerald-700 px-3 py-1.5 rounded-lg font-bold hover:bg-emerald-200 transition">Complete</button>
+                            <button @click="batchDelete('active')" class="text-xs bg-red-100 text-red-700 px-3 py-1.5 rounded-lg font-bold hover:bg-red-200 transition">Delete</button>
                         </div>
                     </div>
                 </div>
-
                 <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-                    <div class="h-1.5 bg-gradient-to-r from-orange-400 via-amber-300 to-orange-400"></div>
-
                     <table class="w-full text-left border-collapse">
                         <thead class="bg-slate-50 border-b border-slate-200 text-slate-400 text-[11px] uppercase font-bold tracking-wider">
                             <tr>
-                                <th class="p-4 w-12 text-center"><input type="checkbox" v-model="allActiveSelected" @change="toggleSelect('active')" class="w-4 h-4 rounded border-slate-300 text-orange-500 focus:ring-orange-400"></th>
-                                <th v-for="header in currentBoard.headers" :key="header" class="p-4 whitespace-nowrap cursor-pointer hover:text-orange-500 transition" @click="currentBoard.sortBy = header">
-                                    {{ header }} <span v-if="currentBoard.sortBy === header" class="text-orange-400">↓</span>
+                                <th class="p-4 w-12 text-center"><input type="checkbox" v-model="allActiveSelected" @change="toggleSelect('active')" class="w-4 h-4 rounded border-slate-300 text-teal-600 focus:ring-teal-500"></th>
+                                <th v-for="header in currentBoard.headers" :key="header" class="p-4 whitespace-nowrap cursor-pointer hover:text-teal-600 transition" @click="currentBoard.sortBy = header">
+                                    {{ header }} <span v-if="currentBoard.sortBy === header" class="text-teal-400">↓</span>
                                 </th>
-                                <th class="p-4 text-center w-24">操作</th>
+                                <th class="p-4 text-center w-24">Action</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-slate-100">
-                            <tr v-for="task in activeTasks" :key="task.id" class="hover:bg-orange-50/10 transition group">
-                                <td class="p-4 text-center"><input type="checkbox" :value="task.id" v-model="selectedActiveIds" class="rounded border-slate-300 text-orange-500 focus:ring-orange-400"></td>
+                            <tr v-for="task in activeTasks" :key="task.id" class="hover:bg-teal-50/20 transition group">
+                                <td class="p-4 text-center"><input type="checkbox" :value="task.id" v-model="selectedActiveIds" class="rounded border-slate-300 text-teal-600 focus:ring-teal-500"></td>
                                 <td v-for="header in currentBoard.headers" :key="header" class="p-4 text-sm max-w-[200px] break-words text-slate-700">
                                     <div v-if="isPriorityField(header)">
                                         <span :class="getBadgeClass(task.data[header])" class="px-2.5 py-1 rounded-md text-[11px] font-bold border shadow-sm" contenteditable="true" @blur="updateCellValue(task, header, $event)">{{ task.data[header] }}</span>
                                     </div>
-                                    <div v-else class="outline-none p-1 border border-transparent focus:border-orange-200 focus:bg-white rounded transition" contenteditable="true" @blur="updateCellValue(task, header, $event)">{{ task.data[header] }}</div>
+                                    <div v-else class="outline-none p-1 border border-transparent focus:border-teal-200 focus:bg-white rounded transition" contenteditable="true" @blur="updateCellValue(task, header, $event)">{{ task.data[header] }}</div>
                                 </td>
                                 <td class="p-4 text-center">
                                     <div class="flex justify-center gap-2 opacity-0 group-hover:opacity-100 transition">
@@ -121,9 +122,8 @@
                     </table>
                 </div>
             </section>
-            
             <div class="text-center pt-8 pb-4">
-                <button @click="resetEverything" class="text-[10px] text-slate-300 hover:text-red-400 uppercase tracking-widest transition">清除所有数据</button>
+                <button @click="resetEverything" class="text-[10px] text-slate-300 hover:text-red-400 uppercase tracking-widest transition">Clear All Data</button>
             </div>
         </div>
     </div>
@@ -136,7 +136,7 @@
     createApp({
         setup() {
             const defaultHeaders = ['Task Name', 'Priority', 'Notes'];
-            const boards = ref([{ id: 1, name: '备课计划 Alpha', headers: [...defaultHeaders], tasks: [], sortBy: 'Priority', sortOrder: 'desc' }]);
+            const boards = ref([{ id: 1, name: 'Lesson Plan Alpha', headers: [...defaultHeaders], tasks: [], sortBy: 'Priority', sortOrder: 'desc' }]);
             const activeBoardIndex = ref(0); const editingBoardIdx = ref(null); const newTaskData = ref({});
             const selectedActiveIds = ref([]); const selectedArchivedIds = ref([]); const allActiveSelected = ref(false);
             const currentBoard = computed(() => boards.value[activeBoardIndex.value]);
@@ -156,7 +156,7 @@
             const toggleSelect = (type) => { if(type === 'active') selectedActiveIds.value = allActiveSelected.value ? activeTasks.value.map(t => t.id) : []; };
             const batchArchive = () => { selectedActiveIds.value.forEach(id => archiveSingle(id)); selectedActiveIds.value = []; allActiveSelected.value = false; };
             const batchDelete = (type) => { if(confirm("Delete Selected?")) { currentBoard.value.tasks = currentBoard.value.tasks.filter(x => !selectedActiveIds.value.includes(x.id)); selectedActiveIds.value = []; } };
-            const resetEverything = () => { if(confirm("Clear ALL?")) { localStorage.removeItem(STORAGE_KEY); location.reload(); }};
+            const resetEverything = () => { if(confirm("Clear ALL data?")) { localStorage.removeItem(STORAGE_KEY); location.reload(); }};
             const getBadgeClass = (v) => { const s = String(v).toLowerCase(); if(s.includes('high')) return 'bg-red-50 text-red-600 border-red-200'; if(s.includes('medium')) return 'bg-orange-50 text-orange-600 border-orange-200'; return 'bg-blue-50 text-blue-600 border-blue-200'; };
             return { boards, activeBoardIndex, editingBoardIdx, currentBoard, newTaskData, activeTasks, selectedActiveIds, allActiveSelected, addTask, createNewBoard, deleteBoard: (idx) => { if(confirm("Delete?")) boards.value.splice(idx,1) }, archiveSingle, deletePermanent, toggleSelect, batchArchive, batchDelete, handleFileUpload, exportToCSV, updateCellValue, getBadgeClass, isPriorityField, resetEverything };
         }

@@ -1,56 +1,44 @@
 {% extends "base.html" %}
-
-{% block title %}后台管理中心{% endblock %}
-
+{% block title %}Admin Console{% endblock %}
 {% block content %}
 <div class="max-w-[1200px] mx-auto p-6">
-    
     <div class="flex justify-between items-center mb-8">
         <div>
-            <h1 class="text-3xl font-black text-slate-800">👑 管理员控制台</h1>
-            <p class="text-slate-500 mt-1">管理全站用户与素材内容</p>
+            <h1 class="text-3xl font-black text-slate-800">👑 Admin Console</h1>
+            <p class="text-slate-500 mt-1">Manage Users & Site Content</p>
         </div>
-        <div class="bg-indigo-100 text-indigo-700 px-4 py-2 rounded-lg font-bold">
-            当前管理员: {{ current_user.username }}
-        </div>
+        <div class="bg-indigo-100 text-indigo-700 px-4 py-2 rounded-lg font-bold">Current Admin: {{ current_user.username }}</div>
     </div>
 
     {% with messages = get_flashed_messages(with_categories=true) %}
       {% if messages %}
-        {% for category, message in messages %}
-          <div class="p-4 mb-6 rounded-xl text-center font-bold {{ 'bg-red-100 text-red-600' if category == 'error' else 'bg-green-100 text-green-600' }}">
-            {{ message }}
-          </div>
+        {% for cat, msg in messages %}
+          <div class="p-4 mb-6 rounded-xl text-center font-bold {{ 'bg-red-100 text-red-600' if cat == 'error' else 'bg-green-100 text-green-600' }}">{{ msg }}</div>
         {% endfor %}
       {% endif %}
     {% endwith %}
 
     <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
-        
         <div class="lg:col-span-4 h-fit">
             <div class="bg-white p-6 rounded-2xl shadow-lg border border-slate-100">
-                <h2 class="text-lg font-bold text-slate-700 mb-4 flex items-center gap-2">
-                    <span>➕</span> 快速创建账号
-                </h2>
+                <h2 class="text-lg font-bold text-slate-700 mb-4 flex items-center gap-2"><span>➕</span> Quick Create Account</h2>
                 <form method="POST" action="/admin" class="space-y-4">
                     <div>
-                        <label class="block text-xs font-bold text-slate-500 uppercase mb-1">用户名</label>
-                        <input type="text" name="new_username" required class="w-full p-3 border rounded-xl bg-slate-50 focus:bg-white outline-none focus:ring-2 focus:ring-indigo-500">
+                        <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Username</label>
+                        <input type="text" name="new_username" required class="w-full p-3 border rounded-xl bg-slate-50 focus:ring-indigo-500 outline-none">
                     </div>
                     <div>
-                        <label class="block text-xs font-bold text-slate-500 uppercase mb-1">初始密码</label>
-                        <input type="text" name="new_password" required class="w-full p-3 border rounded-xl bg-slate-50 focus:bg-white outline-none focus:ring-2 focus:ring-indigo-500">
+                        <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Initial Password</label>
+                        <input type="text" name="new_password" required class="w-full p-3 border rounded-xl bg-slate-50 focus:ring-indigo-500 outline-none">
                     </div>
                     <div>
-                        <label class="block text-xs font-bold text-slate-500 uppercase mb-1">角色权限</label>
+                        <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Role</label>
                         <select name="role" class="w-full p-3 border rounded-xl bg-slate-50 outline-none">
-                            <option value="user">👤 普通用户</option>
-                            <option value="admin">👑 管理员</option>
+                            <option value="user">👤 Normal User</option>
+                            <option value="admin">👑 Administrator</option>
                         </select>
                     </div>
-                    <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 rounded-xl transition">
-                        立即创建
-                    </button>
+                    <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 rounded-xl transition">Create Now</button>
                 </form>
             </div>
         </div>
@@ -58,59 +46,32 @@
         <div class="lg:col-span-8 space-y-8">
             <div class="bg-white rounded-2xl shadow-lg border border-slate-100 overflow-hidden">
                 <div class="p-6 border-b border-slate-100 bg-slate-50/50 flex justify-between items-center">
-                    <h2 class="text-xl font-bold text-slate-700">👥 用户权限管理</h2>
+                    <h2 class="text-xl font-bold text-slate-700">👥 User Management</h2>
                     <span class="text-xs bg-slate-200 px-2 py-1 rounded text-slate-600">Total: {{ users|length }}</span>
                 </div>
                 <div class="overflow-x-auto">
                     <table class="w-full text-left text-sm">
                         <thead class="bg-slate-50 text-slate-500">
-                            <tr>
-                                <th class="p-4">用户</th>
-                                <th class="p-4">角色</th>
-                                <th class="p-4">权限操作</th>
-                                <th class="p-4 text-right">账号管理</th>
-                            </tr>
+                            <tr><th class="p-4">User</th><th class="p-4">Role</th><th class="p-4">Actions</th><th class="p-4 text-right">Account</th></tr>
                         </thead>
                         <tbody class="divide-y divide-slate-100">
                             {% for u in users %}
                             <tr class="hover:bg-slate-50 transition">
-                                <td class="p-4 font-bold text-slate-700">
-                                    {{ u.username }}
-                                    <div class="text-[10px] text-slate-400 font-normal">ID: {{ u.id }}</div>
-                                </td>
+                                <td class="p-4 font-bold text-slate-700">{{ u.username }}<div class="text-[10px] text-slate-400 font-normal">ID: {{ u.id }}</div></td>
                                 <td class="p-4">
-                                    {% if u.is_admin %}
-                                        <span class="bg-purple-100 text-purple-700 px-2 py-1 rounded-md text-xs font-bold border border-purple-200">Admin</span>
-                                    {% else %}
-                                        <span class="bg-slate-100 text-slate-500 px-2 py-1 rounded-md text-xs border border-slate-200">User</span>
-                                    {% endif %}
+                                    {% if u.is_admin %}<span class="bg-purple-100 text-purple-700 px-2 py-1 rounded-md text-xs font-bold border border-purple-200">Admin</span>
+                                    {% else %}<span class="bg-slate-100 text-slate-500 px-2 py-1 rounded-md text-xs border border-slate-200">User</span>{% endif %}
                                 </td>
                                 <td class="p-4">
                                     {% if u.id != 1 and u.id != current_user.id %}
-                                        {% if u.is_admin %}
-                                            <a href="/admin/demote/{{ u.id }}" class="text-xs bg-white border border-slate-300 px-2 py-1 rounded hover:bg-slate-100 text-slate-600">
-                                                ⬇ 降级为用户
-                                            </a>
-                                        {% else %}
-                                            <a href="/admin/promote/{{ u.id }}" class="text-xs bg-indigo-50 border border-indigo-200 px-2 py-1 rounded hover:bg-indigo-100 text-indigo-700 font-bold">
-                                                ⬆ 设为管理员
-                                            </a>
-                                        {% endif %}
-                                    {% else %}
-                                        <span class="text-xs text-slate-300">不可变更</span>
-                                    {% endif %}
+                                        {% if u.is_admin %}<a href="/admin/demote/{{ u.id }}" class="text-xs bg-white border border-slate-300 px-2 py-1 rounded text-slate-600">⬇ Demote</a>
+                                        {% else %}<a href="/admin/promote/{{ u.id }}" class="text-xs bg-indigo-50 border border-indigo-200 px-2 py-1 rounded text-indigo-700 font-bold">⬆ Promote</a>{% endif %}
+                                    {% else %}<span class="text-xs text-slate-300">Unchangeable</span>{% endif %}
                                 </td>
                                 <td class="p-4 text-right flex justify-end gap-2">
-                                    <a href="/admin/reset_pwd/{{ u.id }}" onclick="return confirm('确定将用户 {{ u.username }} 的密码重置为 123456 吗？')"
-                                       class="text-amber-500 hover:text-amber-700 font-bold text-xs bg-amber-50 px-2 py-1 rounded border border-amber-100">
-                                        🔑 重置密码
-                                    </a>
-                                    
+                                    <a href="/admin/reset_pwd/{{ u.id }}" onclick="return confirm('Reset password for {{ u.username }} to 123456?')" class="text-amber-500 font-bold text-xs bg-amber-50 px-2 py-1 rounded border border-amber-100">🔑 Reset</a>
                                     {% if u.id != 1 and u.id != current_user.id %}
-                                    <a href="/admin/delete_user/{{ u.id }}" onclick="return confirm('确定要永久删除用户 {{ u.username }} 吗？')" 
-                                       class="text-red-500 hover:text-red-700 font-bold text-xs bg-red-50 px-2 py-1 rounded border border-red-100">
-                                        × 删除
-                                    </a>
+                                    <a href="/admin/delete_user/{{ u.id }}" onclick="return confirm('Permanently delete {{ u.username }}?')" class="text-red-500 font-bold text-xs bg-red-50 px-2 py-1 rounded border border-red-100">× Delete</a>
                                     {% endif %}
                                 </td>
                             </tr>
@@ -119,11 +80,8 @@
                     </table>
                 </div>
             </div>
-
             <div class="bg-white rounded-2xl shadow-lg border border-slate-100 overflow-hidden">
-                <div class="p-6 border-b border-slate-100 bg-slate-50/50">
-                    <h2 class="text-xl font-bold text-slate-700">📚 全站素材监控</h2>
-                </div>
+                <div class="p-6 border-b border-slate-100 bg-slate-50/50"><h2 class="text-xl font-bold text-slate-700">📚 Global Content Monitor</h2></div>
                 <div class="overflow-x-auto max-h-[300px] overflow-y-auto">
                     <table class="w-full text-left text-sm">
                         <tbody class="divide-y divide-slate-100">
@@ -132,9 +90,7 @@
                                 <td class="p-4 font-bold text-slate-700 max-w-[200px] truncate">{{ m.filename }}</td>
                                 <td class="p-4"><span class="bg-blue-50 text-blue-600 px-2 py-1 rounded text-xs">{{ m.category }}</span></td>
                                 <td class="p-4 text-xs text-slate-500">{{ m.uploader }}</td>
-                                <td class="p-4 text-right">
-                                    <a href="/admin/delete_material/{{ m.id }}" onclick="return confirm('确定删除？')" class="text-red-500 hover:underline">删除</a>
-                                </td>
+                                <td class="p-4 text-right"><a href="/admin/delete_material/{{ m.id }}" onclick="return confirm('Delete?')" class="text-red-500 hover:underline">Delete</a></td>
                             </tr>
                             {% endfor %}
                         </tbody>

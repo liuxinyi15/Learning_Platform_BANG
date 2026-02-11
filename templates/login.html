@@ -1,129 +1,100 @@
 <!DOCTYPE html>
-<html lang="zh">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>登录 - 语言教学工作台</title>
+    <title>Login - Teaching Hub</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
     <style>
         [v-cloak] { display: none; }
         body {
-            font-family: 'Segoe UI', sans-serif;
-            background-color: #f9fafb; /* 恢复白色背景 */
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-image: linear-gradient(135deg, #113532 0%, #0d2a27 100%);
             min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+            display: flex; align-items: center; justify-content: center;
+            margin: 0;
         }
         .glass-card {
-            background: white;
-            border: 1px solid #e5e7eb;
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.05);
+            background: rgba(255, 255, 255, 0.98);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
         }
+        .input-focus:focus { border-color: #113532; box-shadow: 0 0 0 3px rgba(17, 53, 50, 0.1); }
+        .fade-in-up { animation: fadeInUp 0.5s ease-out forwards; }
+        @keyframes fadeInUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
     </style>
 </head>
 <body>
-
-    <div id="app" class="w-full max-w-md p-6 relative" v-cloak>
-        
-        <div class="text-center mb-8">
-            <div class="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-emerald-500 to-amber-400 rounded-2xl shadow-lg mb-4 text-3xl text-white">
-                🍋
-            </div>
-            <h1 class="text-3xl font-black text-slate-800 tracking-tight">语言教学工作台</h1>
-            <p class="text-slate-400 mt-2">Professional Teaching Platform</p>
+    <div id="app" class="w-full max-w-md p-6 relative fade-in-up" v-cloak>
+        <div class="text-center mb-10">
+            <div class="inline-flex items-center justify-center w-20 h-20 bg-white rounded-3xl shadow-xl mb-5 text-4xl transform hover:scale-105 transition-all border-4 border-emerald-500/20">🍋</div>
+            <h1 class="text-3xl font-black text-white tracking-tight">Teaching Hub BANG</h1>
+            <p class="text-emerald-200/60 mt-2 font-medium">Professional Teaching Platform</p>
         </div>
 
-        <div class="glass-card rounded-3xl overflow-hidden p-8 relative z-10">
-            
-            <div class="flex bg-slate-50 p-1 rounded-xl mb-8 relative">
-                <div class="w-1/2 text-center py-2 z-10 cursor-pointer font-bold text-sm transition-colors duration-300"
-                     :class="mode === 'login' ? 'text-emerald-700' : 'text-slate-400'"
-                     @click="mode = 'login'">
-                    登 录
-                </div>
-                <div class="w-1/2 text-center py-2 z-10 cursor-pointer font-bold text-sm transition-colors duration-300"
-                     :class="mode === 'register' ? 'text-emerald-700' : 'text-slate-400'"
-                     @click="mode = 'register'">
-                    注 册
-                </div>
-                <div class="absolute top-1 bottom-1 w-[calc(50%-4px)] bg-amber-100 rounded-lg shadow-sm transition-transform duration-300 ease-out"
-                     :class="mode === 'login' ? 'translate-x-1' : 'translate-x-[100%] ml-1'">
-                </div>
+        <div class="glass-card rounded-[2.5rem] overflow-hidden p-8 relative z-10">
+            <div class="flex bg-slate-100 p-1.5 rounded-2xl mb-8 relative">
+                <div class="w-1/2 text-center py-2.5 z-10 cursor-pointer font-bold text-sm transition-colors duration-300"
+                     :class="mode === 'login' ? 'text-[#113532]' : 'text-slate-400'" @click="mode = 'login'">Login</div>
+                <div class="w-1/2 text-center py-2.5 z-10 cursor-pointer font-bold text-sm transition-colors duration-300"
+                     :class="mode === 'register' ? 'text-[#113532]' : 'text-slate-400'" @click="mode = 'register'">Register</div>
+                <div class="absolute top-1.5 bottom-1.5 w-[calc(50%-6px)] bg-white rounded-xl shadow-sm transition-transform duration-300"
+                     :style="{ transform: mode === 'login' ? 'translateX(0)' : 'translateX(100%)' }"></div>
             </div>
 
             {% with messages = get_flashed_messages(with_categories=true) %}
               {% if messages %}
-                <div class="mb-6 space-y-2">
-                {% for category, message in messages %}
-                  <div class="p-3 rounded-xl text-sm font-bold text-center 
-                              {{ 'bg-red-50 text-red-600' if category == 'error' else 'bg-green-50 text-green-600' }}">
-                    {{ message }}
+                {% for cat, msg in messages %}
+                  <div class="mb-4 p-3 rounded-xl text-sm font-bold text-center border {{ 'bg-red-50 text-red-700 border-red-100' if cat == 'error' else 'bg-emerald-50 text-emerald-800 border-emerald-100' }}">
+                    {{ msg }}
                   </div>
                 {% endfor %}
-                </div>
               {% endif %}
             {% endwith %}
 
             <form method="POST" action="/login">
                 <input type="hidden" name="action" :value="mode">
-
                 <div class="space-y-5">
                     <div>
-                        <label class="block text-xs font-bold text-slate-500 uppercase mb-2 ml-1">用户名</label>
-                        <input type="text" name="username" required
-                               class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:bg-white outline-none transition font-medium text-slate-700">
+                        <label class="block text-xs font-bold text-slate-500 uppercase mb-2 ml-1 tracking-wider">Username</label>
+                        <input type="text" name="username" required class="input-focus w-full px-4 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl outline-none transition font-medium text-[#113532]">
                     </div>
-
                     <div>
-                        <label class="block text-xs font-bold text-slate-500 uppercase mb-2 ml-1">密码</label>
-                        <input type="password" name="password" required
-                               class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:bg-white outline-none transition font-medium text-slate-700">
+                        <label class="block text-xs font-bold text-slate-500 uppercase mb-2 ml-1 tracking-wider">Password</label>
+                        <input type="password" name="password" required class="input-focus w-full px-4 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl outline-none transition font-medium text-[#113532]">
                     </div>
-
-                    <button type="submit" 
-                            class="w-full py-3.5 mt-4 rounded-xl font-bold text-white shadow-lg shadow-emerald-500/20 transform active:scale-95 transition-all duration-200 flex items-center justify-center gap-2"
-                            :class="mode === 'login' ? 'bg-emerald-600 hover:bg-emerald-700' : 'bg-slate-800 hover:bg-black'">
-                        <span v-if="mode === 'login'">进入系统 →</span>
-                        <span v-else>立即注册 +</span>
+                    <button type="submit" class="w-full py-4 mt-4 rounded-2xl font-bold text-white shadow-lg transition-all duration-200 flex items-center justify-center gap-2"
+                            :class="mode === 'login' ? 'bg-[#113532] hover:bg-[#0d2a27]' : 'bg-slate-800 hover:bg-slate-700'">
+                        <span v-if="mode === 'login'">Enter System →</span>
+                        <span v-else>Register Now +</span>
                     </button>
                 </div>
             </form>
 
-            <div class="flex justify-between items-center mt-6 px-1">
-                <p class="text-xs text-slate-400 cursor-pointer hover:text-emerald-600 transition" 
-                   v-text="mode === 'login' ? '还没有账号？去注册' : '已有账号？去登录'"
-                   @click="mode = mode === 'login' ? 'register' : 'login'">
+            <div class="flex justify-between items-center mt-8 px-1">
+                <p class="text-xs text-slate-400 cursor-pointer hover:text-[#113532] transition font-medium" @click="toggleMode">
+                   <span v-if="mode === 'login'">No account? Sign Up</span>
+                   <span v-else>Have account? Login</span>
                 </p>
-                <button v-if="mode === 'login'" @click="showForgot = true" class="text-xs font-bold text-slate-400 hover:text-emerald-600 transition">
-                    忘记密码?
-                </button>
+                <button v-if="mode === 'login'" @click="showForgot = true" class="text-xs font-bold text-slate-400 hover:text-[#113532] transition">Forgot Password?</button>
             </div>
         </div>
 
-        <transition name="modal">
-            <div v-if="showForgot" class="fixed inset-0 z-50 flex items-center justify-center bg-black/20 backdrop-blur-sm p-4">
-                <div class="bg-white rounded-2xl p-6 max-w-sm w-full shadow-2xl animate-fade-in-up">
-                    <div class="text-center">
-                        <div class="w-12 h-12 bg-amber-100 text-amber-600 rounded-full flex items-center justify-center text-2xl mx-auto mb-4">🔑</div>
-                        <h3 class="text-lg font-bold text-slate-800 mb-2">找回密码</h3>
-                        <p class="text-sm text-slate-500 mb-6 leading-relaxed">
-                            请联系系统管理员重置您的密码。
-                        </p>
-                        <button @click="showForgot = false" class="w-full py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl transition">
-                            知道了
-                        </button>
-                    </div>
+        <div v-if="showForgot" class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+            <div class="bg-white rounded-[2.5rem] p-8 max-w-sm w-full shadow-2xl animate-fade-in-up">
+                <div class="text-center">
+                    <div class="w-14 h-14 bg-amber-50 text-amber-600 rounded-2xl flex items-center justify-center text-3xl mx-auto mb-5 border border-amber-100">🔑</div>
+                    <h3 class="text-lg font-black text-[#113532] mb-2">Reset Password</h3>
+                    <p class="text-sm text-slate-500 mb-8 leading-relaxed">Please contact the administrator to reset your password.</p>
+                    <button @click="showForgot = false" class="w-full py-3.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl transition">Got it</button>
                 </div>
             </div>
-        </transition>
-
+        </div>
     </div>
-
     <script>
         const { createApp, ref } = Vue;
-        createApp({ setup() { return { mode: ref('login'), showForgot: ref(false) } } }).mount('#app');
+        createApp({ setup() { const mode = ref('login'); const showForgot = ref(false); const toggleMode = () => { mode.value = mode.value === 'login' ? 'register' : 'login'; }; return { mode, showForgot, toggleMode } } }).mount('#app');
     </script>
 </body>
 </html>
