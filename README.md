@@ -17,11 +17,11 @@ BANG is an all-in-one teaching workbench designed to empower language educators.
 BANG consists of 6 core modules, each distinguished by a unique theme color to represent different aspects of the teaching workflow:
 
 1. 📚 Material Library 
-  Resource Management: Batch upload and manage teaching materials (PDFs, Docs, Audio).
+    Resource Management: Batch upload and manage teaching materials (PDFs, Docs, Audio).
 
-  Visual Indexing: Auto-generated cover previews and category filtering.
+    Visual Indexing: Auto-generated cover previews and category filtering.
 
-  Smart Sorting: Organize resources by official/personal uploads or timeline.
+    Smart Sorting: Organize resources by official/personal uploads or timeline.
 
 2. 📅 Lesson Planner 
   Kanban Board: Drag-and-drop task management for daily lesson planning.
