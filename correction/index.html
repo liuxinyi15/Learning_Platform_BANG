@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <title>错题本自动化系统 - 简化版</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <style>
+        body { background-color: #f4f7f6; }
+        .upload-card { border: none; border-radius: 15px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
+        .step-num { width: 30px; height: 30px; background: #0d6efd; color: white; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; margin-right: 10px; }
+        .badge-custom { font-size: 0.9rem; padding: 8px 15px; margin: 4px; border-radius: 50px; }
+    </style>
+</head>
+<body>
+
+<div class="container py-5">
+    <div class="text-center mb-5">
+        <h2 class="fw-bold text-primary"><i class="bi bi-journal-check"></i> 学生错题本生成系统</h2>
+        <p class="text-muted">仅需两个文件，自动完成打分与错题提取</p>
+    </div>
+
+    <div class="row g-4">
+        <div class="col-md-5">
+            <div class="card upload-card p-4 h-100">
+                <h5 class="mb-4"><span class="step-num">1</span>上传数据</h5>
+                
+                <div class="mb-4">
+                    <label class="form-label fw-bold small text-secondary">1. 学生答题卡 (含姓名、题号列)</label>
+                    <input type="file" class="form-control form-control-lg" id="file_stu" accept=".xlsx,.xls">
+                </div>
+
+                <div class="mb-4">
+                    <label class="form-label fw-bold small text-secondary">2. 综合题库 (含题号/答案/分值/解析)</label>
+                    <input type="file" class="form-control form-control-lg" id="file_bank" accept=".xlsx,.xls">
+                    <div class="form-text mt-2"><i class="bi bi-info-circle"></i> 系统会自动读取前三列作为判分依据，剩余列作为错题本内容。</div>
+                </div>
+
+                <button class="btn btn-primary btn-lg w-100 mt-2" id="uploadBtn" onclick="uploadFiles()">
+                    <i class="bi bi-lightning-fill"></i> 开始分析数据
+                </button>
+            </div>
+        </div>
+
+        <div class="col-md-7">
+            <div class="card upload-card p-4 h-100">
+                <h5 class="mb-4"><span class="step-num">2</span>查看与下载</h5>
+                
+                <div class="row g-2 mb-4">
+                    <div class="col-8">
+                        <select id="studentSelect" class="form-select form-select-lg" onchange="loadStudentErrors()">
+                            <option value="">-- 请先上传文件 --</option>
+                        </select>
+                    </div>
+                    <div class="col-4">
+                        <div class="bg-light p-2 rounded text-center border h-100 d-flex flex-column justify-content-center">
+                            <small class="text-muted d-block">总分</small>
+                            <strong class="text-primary h5 mb-0" id="scoreVal">--</strong>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="resultArea" style="display:none;">
+                    <div class="p-3 bg-light rounded mb-4">
+                        <p class="small fw-bold text-danger mb-2"><i class="bi bi-x-circle-fill"></i> 错题列表：</p>
+                        <div id="wrongIds" class="d-flex flex-wrap"></div>
+                    </div>
+                    <button class="btn btn-success btn-lg w-100" onclick="downloadExcel()">
+                        <i class="bi bi-file-earmark-excel"></i> 下载专属错题本 (Excel)
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const API_BASE_URL = 'http://127.0.0.1:5000';
+
+    async function uploadFiles() {
+        const fileStu = document.getElementById('file_stu').files[0];
+        const fileBank = document.getElementById('file_bank').files[0];
+        const btn = document.getElementById('uploadBtn');
+
+        if (!fileStu || !fileBank) {
+            alert("❌ 请同时选择【学生答题卡】和【综合题库】");
+            return;
+        }
+
+        const formData = new FormData();
+        formData.append('student_ans', fileStu);
+        formData.append('combined_bank', fileBank);
+
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> 处理中...';
+
+        try {
+            const res = await fetch(`${API_BASE_URL}/upload_data`, { method: 'POST', body: formData });
+            const data = await res.json();
+            
+            if (data.error) {
+                alert("错误: " + data.error);
+            } else {
+                const select = document.getElementById('studentSelect');
+                select.innerHTML = '<option value="">-- 选择学生 --</option>';
+                data.students.forEach(name => {
+                    const opt = document.createElement('option');
+                    opt.value = name;
+                    opt.textContent = name;
+                    select.appendChild(opt);
+                });
+                alert(`✅ 成功识别 ${data.students.length} 名学生`);
+            }
+        } catch (error) {
+            alert("❌ 服务器连接失败");
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = '<i class="bi bi-lightning-fill"></i> 开始分析数据';
+        }
+    }
+
+    async function loadStudentErrors() {
+        const name = document.getElementById('studentSelect').value;
+        const resultArea = document.getElementById('resultArea');
+        if (!name) { resultArea.style.display = 'none'; return; }
+
+        try {
+            const res = await fetch(`${API_BASE_URL}/get_errors/${encodeURIComponent(name)}`);
+            const data = await res.json();
+            
+            document.getElementById('scoreVal').innerText = data.total_score + " 分";
+            const wrongIdsDiv = document.getElementById('wrongIds');
+            wrongIdsDiv.innerHTML = '';
+            resultArea.style.display = 'block';
+
+            if (data.wrong_questions.length > 0) {
+                data.wrong_questions.forEach(qId => {
+                    const span = document.createElement('span');
+                    span.className = 'badge bg-danger badge-custom';
+                    span.innerText = "题号 " + qId;
+                    wrongIdsDiv.appendChild(span);
+                });
+            } else {
+                wrongIdsDiv.innerHTML = '<span class="text-success">全对，没有错题！</span>';
+            }
+        } catch (error) { alert("加载失败"); }
+    }
+
+    function downloadExcel() {
+        const name = document.getElementById('studentSelect').value;
+        window.location.href = `${API_BASE_URL}/download_error_book/${encodeURIComponent(name)}`;
+    }
+</script>
+</body>
+</html>
