@@ -1,0 +1,482 @@
+{% extends "base.html" %}
+
+{% block title %}Performance Analysis{% endblock %}
+
+{% block head %}
+<script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+<style>
+    .fade-in-up { animation: fadeInUp 0.5s ease-out forwards; }
+    @keyframes fadeInUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    
+    /* 🟣 Deep Indigo Theme */
+    .file-drop-zone {
+        border: 2px dashed #6366f1; 
+        background-color: #eef2ff; 
+        transition: all 0.3s;
+    }
+    .file-drop-zone:hover, .file-drop-zone.active {
+        border-color: #312e81; 
+        background-color: #e0e7ff; 
+    }
+    
+    .btn-indigo {
+        background-color: #312e81; 
+        color: white;
+        transition: all 0.2s;
+    }
+    .btn-indigo:hover { 
+        background-color: #1e1b4b; 
+        transform: translateY(-1px); 
+        box-shadow: 0 4px 6px -1px rgba(49, 46, 129, 0.4); 
+    }
+    .btn-indigo:disabled { 
+        background-color: #a5b4fc; 
+        cursor: not-allowed; 
+        transform: none; 
+        box-shadow: none; 
+        color: #e0e7ff; 
+    }
+    
+    .chart-card { min-height: 420px; }
+    .exam-item { display: flex; justify-content: space-between; align-items: center; padding: 8px; border-bottom: 1px dashed #e2e8f0; font-size: 0.875rem; }
+    .exam-item:last-child { border-bottom: none; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="max-w-[1400px] mx-auto p-6 fade-in-up">
+    
+    <header class="mb-8 bg-white p-8 rounded-3xl border border-slate-100 shadow-sm relative overflow-hidden text-center">
+        <div class="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-indigo-900 to-blue-900"></div>
+        <div class="absolute -left-10 -bottom-20 w-40 h-40 bg-indigo-50 rounded-full blur-3xl opacity-60"></div>
+
+        <div class="relative z-10">
+            <div class="inline-flex items-center justify-center w-16 h-16 bg-indigo-50 text-indigo-900 rounded-2xl text-3xl mb-4 shadow-sm border border-indigo-100">
+                📊
+            </div>
+            <h1 class="text-3xl font-black text-slate-800 tracking-tight">Performance Analysis</h1>
+            <p class="text-slate-500 mt-2 text-sm font-medium bg-slate-50 inline-block px-4 py-1 rounded-full border border-slate-100">
+                Grade Dashboard · Class Trends · Student Tracking
+            </p>
+        </div>
+    </header>
+
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        
+        <div class="lg:col-span-3 space-y-6">
+            
+            <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200">
+                <h3 class="font-bold text-slate-500 uppercase text-xs tracking-widest mb-4 flex items-center gap-2">
+                    <span class="bg-indigo-100 text-indigo-900 w-6 h-6 rounded-full flex items-center justify-center">0</span>
+                    Class Manager
+                </h3>
+                <select id="classSelect" onchange="changeClass()" class="w-full mb-3 px-3 py-2 border border-slate-200 rounded-xl text-sm font-bold text-indigo-900 outline-none focus:ring-2 focus:ring-indigo-900">
+                    <option value="">Loading...</option>
+                </select>
+                <button onclick="createNewClass()" class="w-full text-xs border border-indigo-200 text-indigo-700 py-2 rounded-lg hover:bg-indigo-50 transition">
+                    + Create New Class
+                </button>
+            </div>
+
+            <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="font-bold text-slate-500 uppercase text-xs tracking-widest flex items-center gap-2">
+                        <span class="bg-indigo-100 text-indigo-900 w-6 h-6 rounded-full flex items-center justify-center">1</span>
+                        History
+                    </h3>
+                    <label class="text-xs text-indigo-600 font-bold cursor-pointer hover:underline">
+                        <input type="checkbox" onchange="toggleSelectAll(this)" class="accent-indigo-900 align-middle"> Select All
+                    </label>
+                </div>
+                
+                <div id="examCheckboxes" class="max-h-[250px] overflow-y-auto mb-4 border border-slate-100 rounded-xl p-2 bg-slate-50/50">
+                    <span class="text-xs text-slate-400 p-2 block">Select a class first.</span>
+                </div>
+                <button onclick="compareHistoryExams()" class="w-full btn-indigo py-3 rounded-xl font-bold text-sm shadow-sm flex items-center justify-center gap-2">
+                    <span>⚡</span> Compare
+                </button>
+            </div>
+
+            <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200">
+                <h3 class="font-bold text-slate-500 uppercase text-xs tracking-widest mb-4 flex items-center gap-2">
+                    <span class="bg-blue-100 text-blue-900 w-6 h-6 rounded-full flex items-center justify-center">2</span>
+                    Upload
+                </h3>
+                
+                <div class="space-y-3">
+                    <input type="text" id="examName" placeholder="Exam Name" 
+                           class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none focus:ring-2 focus:ring-indigo-900 transition">
+                    
+                    <div class="file-drop-zone p-4 rounded-xl text-center cursor-pointer relative group">
+                        <input type="file" id="fileInput" accept=".csv,.xlsx,.xls" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" onchange="updateFileLabel(this)">
+                        <div id="fileLabel" class="text-slate-400 text-xs py-1">
+                            <span class="text-xl block mb-1">📂</span> Select File
+                        </div>
+                    </div>
+                </div>
+
+                <button onclick="uploadFile()" class="w-full mt-4 bg-slate-800 hover:bg-slate-900 text-white py-3 rounded-xl font-bold text-sm shadow-lg transition flex items-center justify-center gap-2">
+                    <span>💾</span> Save
+                </button>
+                <p id="status" class="text-center text-xs text-indigo-900 mt-3 font-bold h-4"></p>
+            </div>
+        </div>
+
+        <div class="lg:col-span-9 space-y-6">
+            
+            <div class="flex gap-2 flex-wrap">
+                <button onclick="switchTab('grade')" id="btnGrade" class="px-6 py-2.5 rounded-xl font-bold text-sm transition-all bg-white text-slate-500 hover:bg-slate-50 border border-slate-200">
+                    🌍 Grade Dashboard
+                </button>
+                <button onclick="switchTab('class')" id="btnClass" class="px-6 py-2.5 rounded-xl font-bold text-sm transition-all bg-indigo-900 text-white shadow-md">
+                    🏫 Class Analysis
+                </button>
+                <button onclick="switchTab('student')" id="btnStudent" class="px-6 py-2.5 rounded-xl font-bold text-sm transition-all bg-white text-slate-500 hover:bg-slate-50 border border-slate-200">
+                    🧑‍🎓 Student Tracker
+                </button>
+            </div>
+
+            <div id="gradeTab" class="hidden space-y-6">
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 chart-card">
+                    <div class="flex justify-between items-center mb-6">
+                        <div class="h-1 bg-green-600 w-12 rounded-full"></div>
+                        <div class="flex items-center gap-2">
+                            <span class="text-xs font-bold text-slate-400 uppercase">Compare Exam Across Classes:</span>
+                            <select id="gradeExamSelect" onchange="updateGradeChart()" class="bg-slate-50 border border-slate-200 text-sm rounded-lg p-2 outline-none">
+                                <option value="">-- Select Exam --</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div id="gradeChart" class="w-full h-[450px]"></div>
+                </div>
+            </div>
+
+            <div id="classTab" class="space-y-6">
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 chart-card">
+                    <div class="flex justify-between items-center mb-2">
+                        <div class="h-1 bg-indigo-900 w-12 rounded-full"></div>
+                        <span class="text-xs font-bold text-slate-400 uppercase">Average Score History</span>
+                    </div>
+                    <div id="trendChart" class="w-full h-[380px]"></div>
+                </div>
+                
+                <div id="comparisonArea" class="hidden grid grid-cols-1 xl:grid-cols-3 gap-6">
+                    <div class="xl:col-span-2 bg-white p-6 rounded-2xl shadow-sm border border-slate-200 chart-card">
+                        <div class="flex justify-between items-center mb-2">
+                            <div class="h-1 bg-blue-800 w-12 rounded-full"></div>
+                            <span class="text-xs font-bold text-slate-400 uppercase">Ranking</span>
+                        </div>
+                        <div id="barChart" class="w-full h-[450px]"></div>
+                    </div>
+                    <div class="xl:col-span-1 bg-white p-6 rounded-2xl shadow-sm border border-slate-200 chart-card">
+                        <div class="flex justify-between items-center mb-2">
+                            <div class="h-1 bg-slate-700 w-12 rounded-full"></div>
+                            <span class="text-xs font-bold text-slate-400 uppercase">Ability Radar</span>
+                        </div>
+                        <div id="radarChart" class="w-full h-[450px]"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="studentTab" class="hidden space-y-6">
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 chart-card">
+                    <div class="flex justify-between items-center mb-6">
+                        <div class="h-1 bg-indigo-900 w-12 rounded-full"></div>
+                        <div class="flex gap-2">
+                            <select id="studentSelect" onchange="updateStudentChart()" class="bg-slate-50 border border-slate-200 text-sm rounded-lg p-2 outline-none">
+                                <option value="">-- Select Student --</option>
+                            </select>
+                            <select id="subjectSelect" onchange="updateStudentChart()" class="bg-slate-50 border border-slate-200 text-sm rounded-lg p-2 outline-none">
+                                <option value="Total">Total Score</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div id="studentTrendChart" class="w-full h-[450px]"></div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<script>
+    let trendChart = echarts.init(document.getElementById('trendChart'));
+    let barChart = echarts.init(document.getElementById('barChart'));
+    let radarChart = echarts.init(document.getElementById('radarChart'));
+    let studentTrendChart = echarts.init(document.getElementById('studentTrendChart'));
+    let gradeChart = echarts.init(document.getElementById('gradeChart'));
+    
+    let globalData = null;
+    let currentClass = "";
+
+    async function init() {
+        await loadClasses();
+        await loadGradeExams(); // Load exams for grade dashboard
+    }
+    
+    // --- Class Management ---
+    async function loadClasses() {
+        const res = await fetch('/api/performance/classes');
+        const data = await res.json();
+        const select = document.getElementById('classSelect');
+        select.innerHTML = '';
+        if (data.classes.length > 0) {
+            data.classes.forEach(c => {
+                select.add(new Option(c, c));
+            });
+            currentClass = data.classes[0];
+            refreshList();
+        } else {
+            select.add(new Option("No classes", ""));
+            document.getElementById('examCheckboxes').innerHTML = '<span class="text-xs text-slate-400 p-2">Create a class to start.</span>';
+        }
+    }
+
+    async function createNewClass() {
+        const name = prompt("Enter Class Name (e.g., Class 1):");
+        if (name) {
+            await fetch('/api/performance/classes', {
+                method: 'POST', headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({class_name: name})
+            });
+            loadClasses();
+        }
+    }
+
+    function changeClass() {
+        currentClass = document.getElementById('classSelect').value;
+        refreshList();
+    }
+
+    function toggleSelectAll(source) {
+        const checkboxes = document.querySelectorAll('.exam-checkbox');
+        for(let i=0; i<checkboxes.length; i++) {
+            checkboxes[i].checked = source.checked;
+        }
+    }
+
+    // --- Tab Switching ---
+    function switchTab(tab) {
+        ['grade', 'class', 'student'].forEach(t => {
+            document.getElementById(`${t}Tab`).classList.toggle('hidden', t !== tab);
+            const btn = document.getElementById(`btn${t.charAt(0).toUpperCase() + t.slice(1)}`);
+            if (t === tab) {
+                btn.className = "px-6 py-2.5 rounded-xl font-bold text-sm transition-all bg-indigo-900 text-white shadow-md transform -translate-y-0.5";
+            } else {
+                btn.className = "px-6 py-2.5 rounded-xl font-bold text-sm transition-all bg-white text-slate-500 hover:bg-slate-50 border border-slate-200";
+            }
+        });
+        setTimeout(() => { 
+            trendChart.resize(); barChart.resize(); radarChart.resize(); 
+            studentTrendChart.resize(); gradeChart.resize();
+        }, 100);
+    }
+
+    function updateFileLabel(input) {
+        if (input.files.length > 0) {
+            document.getElementById('fileLabel').innerHTML = `<span class="text-indigo-900 font-bold">📄 ${input.files[0].name}</span>`;
+            input.parentElement.classList.add('bg-indigo-50', 'border-indigo-900');
+        }
+    }
+
+    // --- Data Loading ---
+    async function refreshList() {
+        if(!currentClass) return;
+        const res = await fetch(`/api/performance/exams?class_name=${encodeURIComponent(currentClass)}`);
+        const data = await res.json();
+        const container = document.getElementById('examCheckboxes');
+        container.innerHTML = '';
+
+        if (data.exams && data.exams.length > 0) {
+            data.exams.forEach(exam => {
+                const div = document.createElement('div');
+                div.className = 'exam-item';
+                div.innerHTML = `
+                    <label class="flex items-center gap-2 cursor-pointer">
+                        <input type="checkbox" value="${exam}" class="exam-checkbox accent-indigo-900 w-4 h-4">
+                        <span class="text-slate-700">${exam}</span>
+                    </label>
+                    <button onclick="deleteExam('${exam}')" class="text-xs text-red-400 hover:text-red-600 hover:bg-red-50 px-2 py-1 rounded transition">Delete</button>
+                `;
+                container.appendChild(div);
+            });
+            renderTrend(data.trend_data);
+        } else {
+            container.innerHTML = '<span class="text-xs text-slate-400 p-2 block">No records found.</span>';
+            trendChart.clear();
+        }
+    }
+
+    // --- Charts ---
+    function renderTrend(data) {
+        if(!data.averages) return;
+        const subjects = Object.keys(data.averages);
+        const series = subjects.map(s => ({ name: s, type: 'line', smooth: true, symbolSize: 8, data: data.averages[s] }));
+        trendChart.setOption({
+            title: { text: 'Average Score Trend', left: 'center', textStyle: {fontSize: 16, fontWeight: 'bold', color: '#1e293b'} },
+            tooltip: { trigger: 'axis' }, legend: { data: subjects, bottom: 0 },
+            xAxis: { type: 'category', data: data.exams }, yAxis: { type: 'value' },
+            grid: { bottom: '15%', top: '15%', left: '5%', right: '5%' },
+            color: ['#312e81', '#4338ca', '#6366f1', '#818cf8', '#a5b4fc'], 
+            series: series
+        });
+    }
+
+    // --- Grade Dashboard Logic ---
+    async function loadGradeExams() {
+        const res = await fetch('/api/performance/grade_overview');
+        const data = await res.json();
+        const select = document.getElementById('gradeExamSelect');
+        if (data.exams) {
+            data.exams.forEach(e => select.add(new Option(e, e)));
+        }
+    }
+
+    async function updateGradeChart() {
+        const examName = document.getElementById('gradeExamSelect').value;
+        if(!examName) return;
+        
+        const res = await fetch('/api/performance/compare_grade', {
+            method: 'POST', headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({exam_name: examName})
+        });
+        const data = await res.json();
+        
+        const classes = data.stats.map(s => s.class);
+        const avgs = data.stats.map(s => s.avg_total);
+        const maxs = data.stats.map(s => s.max_total);
+        
+        gradeChart.setOption({
+            title: { text: `${examName} - Class Comparison`, left: 'center' },
+            tooltip: { trigger: 'axis' }, legend: { bottom: 0 },
+            xAxis: { type: 'category', data: classes }, yAxis: { type: 'value' },
+            series: [
+                { name: 'Average Total', type: 'bar', data: avgs, label: {show:true, position:'top'}, itemStyle: {color: '#4f46e5'} },
+                { name: 'Max Score', type: 'line', data: maxs, itemStyle: {color: '#eab308'} }
+            ]
+        });
+    }
+
+    async function deleteExam(name) {
+        if(!confirm(`Delete "${name}" from ${currentClass}?`)) return;
+        await fetch('/api/performance/delete', { 
+            method: 'POST', headers: {'Content-Type':'application/json'}, 
+            body: JSON.stringify({exam_name: name, class_name: currentClass}) 
+        });
+        refreshList();
+    }
+
+    async function uploadFile() {
+        const name = document.getElementById('examName').value;
+        const file = document.getElementById('fileInput').files[0];
+        if(!name || !file) return alert("Please provide exam name and file!");
+        
+        const form = new FormData();
+        form.append('file', file);
+        form.append('exam_name', name);
+        form.append('class_name', currentClass);
+        
+        document.getElementById('status').innerText = "Processing...";
+        const res = await fetch('/api/performance/upload', { method: 'POST', body: form });
+        const data = await res.json();
+        
+        if(data.success) {
+            document.getElementById('status').innerText = "✅ Done!";
+            refreshList();
+            renderComparison(data);
+            loadGradeExams(); // Refresh grade list just in case
+        } else {
+            alert(data.error);
+        }
+    }
+
+    async function compareHistoryExams() {
+        const checkboxes = document.querySelectorAll('.exam-checkbox:checked');
+        const names = Array.from(checkboxes).map(c => c.value);
+        if(names.length === 0) return alert("Select at least one exam!");
+        
+        const res = await fetch('/api/performance/compare', { 
+            method: 'POST', headers: {'Content-Type':'application/json'}, 
+            body: JSON.stringify({exam_names: names, class_name: currentClass}) 
+        });
+        renderComparison(await res.json());
+    }
+
+    function renderComparison(data) {
+        globalData = data;
+        document.getElementById('comparisonArea').classList.remove('hidden');
+        switchTab('class');
+
+        // Bar Chart
+        barChart.setOption({
+            title: { text: 'Top Scores (Last Exam)', left: 'center', textStyle: {fontSize: 16, fontWeight: 'bold', color: '#1e293b'} },
+            tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' } }, 
+            legend: { data: data.exam_names, bottom: 0 },
+            xAxis: { 
+                type: 'category', 
+                data: data.students, 
+                axisLabel: { rotate: 35, interval: 0, color: '#64748b' } 
+            },
+            yAxis: { type: 'value' },
+            dataZoom: [
+                { type: 'slider', show: true, start: 0, end: 30, bottom: 25, height: 15 }, 
+                { type: 'inside', start: 0, end: 30 }
+            ],
+            grid: { bottom: '25%', top: '15%', left: '5%', right: '5%' },
+            color: ['#312e81', '#4f46e5', '#818cf8'],
+            series: data.bar_series
+        });
+
+        // Radar Chart
+        const indicators = data.valid_subjects.map(s => ({ name: s, max: data.max_scores[s] + 10 }));
+        radarChart.setOption({
+            title: { text: 'Class Ability Radar', left: 'center', textStyle: {fontSize: 16, fontWeight: 'bold', color: '#1e293b'} },
+            legend: { data: data.radar_series.map(i => i.name), bottom: 0 },
+            radar: { indicator: indicators },
+            series: [{ type: 'radar', data: data.radar_series }]
+        });
+
+        const sSelect = document.getElementById('studentSelect');
+        sSelect.innerHTML = data.students.map(s => `<option value="${s}">${s}</option>`).join('');
+        
+        const subSelect = document.getElementById('subjectSelect');
+        subSelect.innerHTML = `<option value="Total">Total Score</option>` + data.valid_subjects.map(s => `<option value="${s}">${s}</option>`).join('');
+        
+        updateStudentChart();
+        setTimeout(() => { barChart.resize(); radarChart.resize(); }, 100);
+    }
+
+    function updateStudentChart() {
+        if (!globalData) return;
+        const stu = document.getElementById('studentSelect').value;
+        const sub = document.getElementById('subjectSelect').value;
+        if (!stu) return;
+
+        const exams = globalData.exam_names;
+        const scores = exams.map(e => {
+            const details = globalData.student_details[stu][e];
+            if (sub === 'Total') return Object.values(details).reduce((a,b)=>a+b, 0);
+            return details[sub] || 0;
+        });
+
+        studentTrendChart.setOption({
+            title: { text: `${stu} - ${sub} Progress`, left: 'center', textStyle: {fontSize: 16, fontWeight: 'bold'} },
+            tooltip: { trigger: 'axis' },
+            xAxis: { type: 'category', data: exams }, yAxis: { type: 'value' },
+            series: [{ 
+                type: 'line', data: scores, smooth: false, 
+                label: { show: true, position: 'top', color: '#312e81', fontWeight: 'bold' }, 
+                itemStyle: { color: '#312e81' }, 
+                lineStyle: { width: 4 },
+                areaStyle: { opacity: 0.1 } 
+            }]
+        });
+    }
+
+    window.onload = init;
+    window.addEventListener('resize', function() { 
+        trendChart.resize(); barChart.resize(); radarChart.resize(); 
+        studentTrendChart.resize(); gradeChart.resize();
+    });
+</script>
+{% endblock %}

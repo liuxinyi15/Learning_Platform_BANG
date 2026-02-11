@@ -42,7 +42,7 @@
     <nav class="navbar">
         <div class="nav-container">
             <a href="/" class="nav-logo">
-                <span class="bg-white/10 w-8 h-8 flex items-center justify-center rounded-lg text-lg backdrop-blur-sm border border-white/10">🍋</span> 
+                <span class="bg-white/10 w-8 h-8 flex items-center justify-center rounded-lg text-lg backdrop-blur-sm border border-white/10">🧩</span> 
                 Teaching Hub - BANG
             </a>
             <div class="nav-links">
@@ -51,6 +51,7 @@
                 <a href="/planner" class="nav-item {% if request.endpoint == 'planner' %}active{% endif %}">Planner</a>
                 <a href="/vocabulary" class="nav-item {% if request.endpoint == 'vocabulary' %}active{% endif %}">Vocab</a>
                 <a href="/audio" class="nav-item {% if request.endpoint == 'audio_page' %}active{% endif %}">Audio</a>
+                <a href="/performance" class="nav-item {% if request.endpoint == 'performance_page' %}active{% endif %}">Performance</a>
                 <a href="/correction" class="nav-item {% if request.endpoint == 'correction_page' %}active{% endif %}">Grading</a>
                 
                 {% if current_user.is_authenticated %}

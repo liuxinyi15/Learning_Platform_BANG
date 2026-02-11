@@ -6,9 +6,19 @@
 <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
 <style>
     .perspective-1000 { perspective: 1000px; }
-    .transform-style-3d { transform-style: preserve-3d; }
-    .backface-hidden { backface-visibility: hidden; }
+    .transform-style-3d { 
+        transform-style: preserve-3d; 
+        -webkit-transform-style: preserve-3d; 
+    }
+    .backface-hidden { 
+        backface-visibility: hidden; 
+        -webkit-backface-visibility: hidden; 
+    }
     .rotate-y-180 { transform: rotateY(180deg); }
+    
+    /* Hover effect for header actions */
+    .header-action { opacity: 0; transition: opacity 0.2s; }
+    th:hover .header-action { opacity: 1; }
 </style>
 {% endblock %}
 
@@ -58,6 +68,48 @@
         </div>
     </div>
 
+    <div v-if="viewMode === 'flashcard'" class="max-w-2xl mx-auto py-10 perspective-1000">
+        <div v-if="activeTasks.length > 0" class="relative w-full h-96 transition-all duration-500 transform-style-3d cursor-pointer group"
+             :class="{ 'rotate-y-180': isFlipped }" @click="isFlipped = !isFlipped">
+            
+            <div class="absolute w-full h-full backface-hidden bg-white border-2 border-slate-100 rounded-[2rem] shadow-xl flex flex-col items-center justify-center p-8 z-20">
+                <div class="text-xs font-bold text-lime-600 uppercase tracking-widest mb-4 bg-lime-50 px-3 py-1 rounded-full">
+                    {{ currentBoard.headers[0] }}
+                </div>
+                <div class="text-5xl font-black text-slate-800 text-center break-words max-w-full">
+                    {{ activeTasks[currentCardIdx].data[currentBoard.headers[0]] }}
+                </div>
+                <div class="absolute bottom-6 text-slate-300 text-xs font-bold animate-pulse">Click to Flip ⟳</div>
+            </div>
+
+            <div class="absolute w-full h-full backface-hidden rotate-y-180 bg-gradient-to-br from-lime-50 to-emerald-50 border-2 border-lime-200 rounded-[2rem] shadow-xl flex flex-col items-center justify-center p-8 z-10">
+                <div class="text-xs font-bold text-emerald-600 uppercase tracking-widest mb-4 bg-white px-3 py-1 rounded-full shadow-sm">
+                    {{ currentBoard.headers[1] || 'Definition' }}
+                </div>
+                <div class="text-4xl font-bold text-slate-700 text-center break-words max-w-full leading-tight">
+                    <span v-if="currentBoard.headers.length > 1 && activeTasks[currentCardIdx].data[currentBoard.headers[1]]">
+                        {{ activeTasks[currentCardIdx].data[currentBoard.headers[1]] }}
+                    </span>
+                    <span v-else class="text-slate-400 text-xl italic">
+                        (No Definition)
+                    </span>
+                </div>
+            </div>
+        </div>
+
+        <div v-if="activeTasks.length > 0" class="flex justify-between items-center mt-10 px-4">
+            <button @click="currentCardIdx = (currentCardIdx - 1 + activeTasks.length) % activeTasks.length; isFlipped=false" class="p-4 bg-white rounded-full shadow-md text-slate-400 hover:text-lime-600 hover:shadow-lg transition">← Prev</button>
+            <div class="font-bold text-slate-400 font-mono text-lg">{{ currentCardIdx + 1 }} / {{ activeTasks.length }}</div>
+            <button @click="currentCardIdx = (currentCardIdx + 1) % activeTasks.length; isFlipped=false" class="p-4 bg-white rounded-full shadow-md text-slate-400 hover:text-lime-600 hover:shadow-lg transition">Next →</button>
+        </div>
+
+        <div v-else class="text-center py-20 bg-slate-50 rounded-3xl border-2 border-dashed border-slate-200">
+            <div class="text-4xl mb-4">📭</div>
+            <p class="text-slate-400 font-bold">No words in this list.</p>
+            <button @click="viewMode='table'" class="mt-4 text-lime-600 font-bold hover:underline">Add words now</button>
+        </div>
+    </div>
+
     <div v-if="viewMode === 'table'" class="grid grid-cols-1 lg:grid-cols-12 gap-8">
         <div class="lg:col-span-3 space-y-6">
             
@@ -65,12 +117,17 @@
                 <h3 class="font-bold text-slate-400 uppercase text-[10px] tracking-widest mb-4">Add New Word</h3>
                 <div class="space-y-4">
                     <div v-for="header in currentBoard.headers" :key="header">
-                        <input v-model="newTaskData[header]" :placeholder="header" 
+                        <label class="block text-[10px] font-bold text-slate-400 mb-1 ml-1">{{ header }}</label>
+                        <select v-if="header.toLowerCase() === 'frequency'" v-model="newTaskData[header]" class="w-full border border-slate-200 p-3 rounded-xl outline-none text-sm bg-slate-50 focus:bg-white focus:ring-2 focus:ring-lime-100 focus:border-lime-400 transition cursor-pointer">
+                            <option value="">-- Select --</option>
+                            <option value="High">High</option>
+                            <option value="Medium">Medium</option>
+                            <option value="Low">Low</option>
+                        </select>
+                        <input v-else v-model="newTaskData[header]" :placeholder="header" 
                                class="w-full border border-slate-200 p-3 rounded-xl outline-none text-sm bg-slate-50 focus:bg-white focus:ring-2 focus:ring-lime-100 focus:border-lime-400 transition">
                     </div>
-                    <button @click="addTask" class="w-full bg-lime-700 text-white py-3 rounded-xl font-bold hover:bg-lime-600 transition text-sm shadow-md">
-                        Add to List
-                    </button>
+                    <button @click="addTask" class="w-full bg-lime-700 text-white py-3 rounded-xl font-bold hover:bg-lime-600 transition text-sm shadow-md">Add to List</button>
                 </div>
             </div>
 
@@ -85,7 +142,6 @@
 
             <div class="bg-gradient-to-br from-lime-700 to-emerald-800 p-6 rounded-2xl shadow-xl text-white">
                 <h3 class="font-bold text-white/80 uppercase text-[10px] tracking-widest mb-4 border-b border-white/20 pb-2">🎧 Generate Audio</h3>
-                
                 <div class="space-y-4 mb-6">
                     <div>
                         <label class="text-[10px] font-bold uppercase opacity-70 block mb-1">Voice</label>
@@ -103,7 +159,6 @@
                         </select>
                     </div>
                 </div>
-
                 <button @click="generateAudio" :disabled="isGenerating" class="w-full bg-white text-lime-800 py-3 rounded-xl font-bold hover:bg-lime-50 transition text-sm shadow-lg flex items-center justify-center gap-2">
                     <span v-if="isGenerating">⏳ Generating...</span>
                     <span v-else>{{ selectedWordIds.length > 0 ? `▶️ Generate Selected (${selectedWordIds.length})` : `▶️ Generate All` }}</span>
@@ -112,21 +167,32 @@
         </div>
 
         <div class="lg:col-span-9">
-            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-x-auto">
                 <table class="w-full text-left border-collapse">
                     <thead class="bg-slate-50 border-b border-slate-200 text-slate-500 text-[10px] uppercase font-bold">
                         <tr>
                             <th class="p-4 w-12 text-center"><input type="checkbox" v-model="isAllSelected" class="accent-lime-700 w-4 h-4"></th>
-                            <th v-for="header in currentBoard.headers" :key="header" class="p-4 cursor-pointer hover:text-lime-800">{{ header }}</th>
+                            <th v-for="(header, index) in currentBoard.headers" :key="header" class="p-4 cursor-pointer hover:text-lime-800 whitespace-nowrap group">
+                                {{ header }}
+                                <span v-if="!defaultHeaders.includes(header)" class="header-action ml-2 inline-flex gap-1">
+                                    <button @click.stop="manageColumn(index)" class="text-slate-300 hover:text-lime-600 transition" title="Edit/Delete">⚙️</button>
+                                </span>
+                            </th>
+                            <th class="p-4 text-center w-24">
+                                <button @click="addNewColumn" class="bg-lime-100 text-lime-700 px-2 py-1 rounded hover:bg-lime-200 transition text-[10px] flex items-center gap-1 mx-auto">
+                                    <span>+</span> Col
+                                </button>
+                            </th>
                             <th class="p-4 text-center">Del</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-slate-100">
                         <tr v-for="task in activeTasks" :key="task.id" class="hover:bg-lime-50/30 transition group" :class="selectedWordIds.includes(task.id) ? 'bg-lime-50/50' : ''">
                             <td class="p-4 text-center"><input type="checkbox" :value="task.id" v-model="selectedWordIds" class="accent-lime-700 w-4 h-4"></td>
-                            <td v-for="header in currentBoard.headers" :key="header" class="p-4 text-sm text-slate-700" contenteditable="true" @blur="updateCellValue(task, header, $event)">
+                            <td v-for="header in currentBoard.headers" :key="header" class="p-4 text-sm text-slate-700 min-w-[120px]" contenteditable="true" @blur="updateCellValue(task, header, $event)">
                                 {{ task.data[header] }}
                             </td>
+                            <td class="p-4 text-center bg-slate-50/20"></td>
                             <td class="p-4 text-center"><button @click="deletePermanent(task.id)" class="text-slate-300 hover:text-red-500 transition">×</button></td>
                         </tr>
                     </tbody>
@@ -138,22 +204,31 @@
 {% endraw %}
 <script>
     const { createApp, ref, computed, watch, onMounted } = Vue;
-    const STORAGE_KEY = 'VOCAB_MASTER_V3';
+    const STORAGE_KEY = 'VOCAB_MASTER_V4_FULL'; // Updated key version
     const parseCSVLine = (text) => { const result = []; let cell = ''; let inQuotes = false; for (let i = 0; i < text.length; i++) { let char = text[i]; if (char === '"') inQuotes = !inQuotes; else if (char === ',' && !inQuotes) { result.push(cell.trim()); cell = ''; } else cell += char; } result.push(cell.trim()); return result.map(v => v.replace(/^"|"$/g, '')); };
     createApp({
         setup() {
-            const defaultHeaders = ['English', 'Chinese', 'Frequency'];
+            const defaultHeaders = ['English', 'Chinese', 'Frequency']; // Protected headers
             const boards = ref([{ id: 1, name: 'Unit 1 Vocab', headers: [...defaultHeaders], tasks: [], sortBy: 'Frequency', sortOrder: 'desc' }]);
             const activeBoardIndex = ref(0); const newTaskData = ref({}); const currentBoard = computed(() => boards.value[activeBoardIndex.value]);
             const viewMode = ref('table'); const currentCardIdx = ref(0); const isFlipped = ref(false); const isGenerating = ref(false);
             const audioConfig = ref({ voice: 'zh-CN-XiaoxiaoNeural', rate: '-20%' }); const selectedWordIds = ref([]);
             const activeTasks = computed(() => currentBoard.value ? currentBoard.value.tasks : []);
             const isAllSelected = computed({ get: () => activeTasks.value.length > 0 && selectedWordIds.value.length === activeTasks.value.length, set: (val) => { selectedWordIds.value = val ? activeTasks.value.map(t => t.id) : []; } });
-            const toggleSelectAll = () => {};
-            const initForm = () => { const data = {}; currentBoard.value?.headers.forEach(h => data[h] = ''); newTaskData.value = data; };
+            
+            const initForm = () => { 
+                const data = {}; 
+                currentBoard.value?.headers.forEach(h => {
+                    if(h.toLowerCase() === 'frequency') data[h] = 'High';
+                    else data[h] = '';
+                }); 
+                newTaskData.value = data; 
+            };
+
             onMounted(() => { const saved = localStorage.getItem(STORAGE_KEY); if (saved) boards.value = JSON.parse(saved); initForm(); });
             watch(boards, (v) => localStorage.setItem(STORAGE_KEY, JSON.stringify(v)), { deep: true });
             watch(activeBoardIndex, () => { initForm(); selectedWordIds.value = []; });
+            
             const handleFileUpload = async (event) => { const file = event.target.files[0]; if (!file) return; const reader = new FileReader(); reader.onload = (e) => { const data = new Uint8Array(e.target.result); const workbook = XLSX.read(data, { type: 'array' }); const firstSheetName = workbook.SheetNames[0]; const worksheet = workbook.Sheets[firstSheetName]; const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 }); if (jsonData.length < 1) return; const headers = jsonData[0].map(h => String(h).trim()); const newTasks = jsonData.slice(1).map((row, i) => { let data = {}; headers.forEach((h, idx) => { data[h] = row[idx] !== undefined ? String(row[idx]) : ""; }); return { id: Date.now() + i, data }; }); currentBoard.value.headers = headers; currentBoard.value.tasks = newTasks; initForm(); selectedWordIds.value = []; alert('Import Successful'); event.target.value = ''; }; reader.readAsArrayBuffer(file); };
             const exportToExcel = () => { if (!currentBoard.value) return; const headers = currentBoard.value.headers; const data = currentBoard.value.tasks.map(t => { const row = {}; headers.forEach(h => row[h] = t.data[h]); return row; }); const worksheet = XLSX.utils.json_to_sheet(data, { header: headers }); const workbook = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(workbook, worksheet, "List"); XLSX.writeFile(workbook, `${currentBoard.value.name}.xlsx`); };
             const addTask = () => { currentBoard.value.tasks.push({ id: Date.now(), data: {...newTaskData.value} }); initForm(); };
@@ -161,8 +236,59 @@
             const createNewBoard = () => { const name = prompt("Board Name:"); if(name) { boards.value.push({ id: Date.now(), name, headers: [...defaultHeaders], tasks: [] }); activeBoardIndex.value = boards.value.length - 1; } };
             const deletePermanent = (id) => { currentBoard.value.tasks = currentBoard.value.tasks.filter(t => t.id !== id); selectedWordIds.value = selectedWordIds.value.filter(sid => sid !== id); };
             const deleteBoard = (idx) => { if(confirm("Delete this board?")) boards.value.splice(idx,1); };
+            
+            const addNewColumn = () => {
+                const newCol = prompt("Enter new column name (e.g. Synonym, Notes):");
+                if (!newCol) return;
+                if (currentBoard.value.headers.includes(newCol)) { alert("Column already exists!"); return; }
+                currentBoard.value.headers.push(newCol);
+                currentBoard.value.tasks.forEach(task => { if (!task.data[newCol]) task.data[newCol] = ""; });
+                initForm();
+            };
+
+            // 🔥 Feature: Rename or Delete Column
+            const manageColumn = (index) => {
+                const header = currentBoard.value.headers[index];
+                if (defaultHeaders.includes(header)) {
+                    alert("System columns cannot be modified.");
+                    return;
+                }
+                const action = prompt(`Manage column "${header}":\nType "rename" to rename\nType "delete" to delete`, "rename");
+                if (!action) return;
+
+                if (action.toLowerCase() === 'delete') {
+                    if (confirm(`Are you sure you want to delete column "${header}"? All data in this column will be lost.`)) {
+                        currentBoard.value.headers.splice(index, 1);
+                        // Clean up data objects
+                        currentBoard.value.tasks.forEach(task => delete task.data[header]);
+                        initForm();
+                    }
+                } else if (action.toLowerCase() === 'rename') {
+                    const newName = prompt("New column name:", header);
+                    if (newName && newName !== header) {
+                        if (currentBoard.value.headers.includes(newName)) { alert("Name already exists!"); return; }
+                        // Update Header
+                        currentBoard.value.headers[index] = newName;
+                        // Migrate Data
+                        currentBoard.value.tasks.forEach(task => {
+                            task.data[newName] = task.data[header];
+                            delete task.data[header];
+                        });
+                        initForm();
+                    }
+                }
+            };
+
             const generateAudio = async () => { if (activeTasks.value.length === 0) return; isGenerating.value = true; const keyEn = currentBoard.value.headers[0]; const keyZh = currentBoard.value.headers[1]; let itemsToProcess = activeTasks.value; if (selectedWordIds.value.length > 0) { itemsToProcess = activeTasks.value.filter(t => selectedWordIds.value.includes(t.id)); } const payload = { filename: currentBoard.value.name, items: itemsToProcess.map(t => ({ English: t.data[keyEn], Chinese: t.data[keyZh] })), voice: audioConfig.value.voice, rate: audioConfig.value.rate }; try { const response = await fetch('/api/generate_audio_json', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) }); if (!response.ok) throw new Error("Failed"); const blob = await response.blob(); const url = window.URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = `${payload.filename}.mp3`; document.body.appendChild(a); a.click(); a.remove(); } catch (e) { alert(e.message); } finally { isGenerating.value = false; } };
-            return { boards, activeBoardIndex, currentBoard, newTaskData, activeTasks, viewMode, currentCardIdx, isFlipped, audioConfig, isGenerating, selectedWordIds, isAllSelected, toggleSelectAll, addTask, createNewBoard, deletePermanent, deleteBoard, updateCellValue, generateAudio, handleFileUpload, exportToExcel };
+            
+            return { 
+                boards, activeBoardIndex, currentBoard, newTaskData, activeTasks, 
+                viewMode, currentCardIdx, isFlipped, audioConfig, isGenerating, 
+                selectedWordIds, isAllSelected, defaultHeaders,
+                addTask, createNewBoard, deletePermanent, deleteBoard, 
+                updateCellValue, generateAudio, handleFileUpload, exportToExcel,
+                addNewColumn, manageColumn
+            };
         }
     }).mount('#app');
 </script>

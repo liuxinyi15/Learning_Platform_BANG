@@ -1,5 +1,7 @@
 {% extends "base.html" %}
+
 {% block title %}Smart Grading{% endblock %}
+
 {% block head %}
 <script src="https://cdn.jsdelivr.net/npm/chart.js@3.7.0/dist/chart.min.js"></script>
 <style>
@@ -72,7 +74,8 @@
                 </div>
                 <div id="resultArea" style="display:none;" class="animate-fade-in-up">
                     <div class="bg-red-50 p-4 rounded-xl border border-red-100 mb-4">
-                        <h6 class="text-xs font-bold text-red-500 uppercase mb-2">Wrong Questions</h6><div id="wrongIds" class="flex flex-wrap gap-2"></div>
+                        <h6 class="text-xs font-bold text-red-500 uppercase mb-2">Wrong Questions</h6>
+                        <div id="wrongIds" class="flex flex-wrap gap-2"></div>
                     </div>
                     <button onclick="downloadExcel()" class="w-full py-3 bg-white border-2 border-cyan-100 text-cyan-700 font-bold rounded-xl hover:bg-cyan-50">📄 Download Personal Error Book</button>
                 </div>
@@ -82,41 +85,114 @@
 </div>
 <script>
     let errorChart = null;
-    function updateFileLabel(type, input) { if (input.files && input.files.length > 0) { document.getElementById(`label_${type}`).innerHTML = `<span class="text-cyan-700 font-bold">📄 ${input.files[0].name}</span>`; input.parentElement.classList.add('border-cyan-400', 'bg-cyan-50'); } }
+
+    // 🔥 自然排序算法：解决 Q1, Q10, Q2 这种排序问题
+    const naturalSort = (a, b) => {
+        return a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' });
+    };
+
+    function updateFileLabel(type, input) { 
+        if (input.files && input.files.length > 0) { 
+            document.getElementById(`label_${type}`).innerHTML = `<span class="text-cyan-700 font-bold">📄 ${input.files[0].name}</span>`; 
+            input.parentElement.classList.add('border-cyan-400', 'bg-cyan-50'); 
+        } 
+    }
+
     async function uploadFiles() { 
         const fileStu = document.getElementById('file_stu').files[0]; 
         const fileBank = document.getElementById('file_bank').files[0]; 
         if (!fileStu || !fileBank) return alert("Please upload both files!"); 
-        const btn = document.getElementById('uploadBtn'); btn.disabled = true; btn.innerText = "Analyzing..."; 
-        const formData = new FormData(); formData.append('student_ans', fileStu); formData.append('combined_bank', fileBank); 
+        
+        const btn = document.getElementById('uploadBtn'); 
+        btn.disabled = true; 
+        btn.innerText = "Analyzing..."; 
+        
+        const formData = new FormData(); 
+        formData.append('student_ans', fileStu); 
+        formData.append('combined_bank', fileBank); 
+        
         try { 
             const res = await fetch('/api/correction/upload', { method: 'POST', body: formData }); 
             const data = await res.json(); 
             if (data.error) throw new Error(data.error); 
-            const select = document.getElementById('studentSelect'); select.innerHTML = '<option value="">-- Choose Student --</option>'; 
+            
+            const select = document.getElementById('studentSelect'); 
+            select.innerHTML = '<option value="">-- Choose Student --</option>'; 
             data.students.forEach(name => select.add(new Option(name, name))); 
+            
             document.getElementById('downloadAllBtn').disabled = false; 
             document.getElementById('summaryStatus').innerHTML = `✅ Complete | Total Score: ${data.paper_total}`; 
-            renderChart(data.question_error_counts); 
-        } catch (e) { alert(e.message); } finally { btn.disabled = false; btn.innerText = "⚡ Re-analyze"; } 
+            
+            // 对图表的 X 轴也进行排序，看起来更整齐
+            const sortedKeys = Object.keys(data.question_error_counts).sort(naturalSort);
+            const sortedValues = sortedKeys.map(k => data.question_error_counts[k]);
+            
+            renderChart(sortedKeys, sortedValues); 
+        } catch (e) { 
+            alert(e.message); 
+        } finally { 
+            btn.disabled = false; 
+            btn.innerText = "⚡ Re-analyze"; 
+        } 
     }
-    function renderChart(errorCounts) { 
-        const container = document.getElementById('chartContainer'); container.innerHTML = '<canvas id="errorChart"></canvas>'; 
+
+    function renderChart(labels, dataVals) { 
+        const container = document.getElementById('chartContainer'); 
+        container.innerHTML = '<canvas id="errorChart"></canvas>'; 
         const ctx = document.getElementById('errorChart').getContext('2d'); 
         if (errorChart) errorChart.destroy(); 
-        errorChart = new Chart(ctx, { type: 'bar', data: { labels: Object.keys(errorCounts), datasets: [{ label: 'Error Count', data: Object.values(errorCounts), backgroundColor: 'rgba(8, 145, 178, 0.6)' }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } } }); 
+        errorChart = new Chart(ctx, { 
+            type: 'bar', 
+            data: { 
+                labels: labels, 
+                datasets: [{ 
+                    label: 'Error Count', 
+                    data: dataVals, 
+                    backgroundColor: 'rgba(8, 145, 178, 0.6)',
+                    borderColor: 'rgba(8, 145, 178, 1)',
+                    borderWidth: 1
+                }] 
+            }, 
+            options: { 
+                responsive: true, 
+                maintainAspectRatio: false, 
+                plugins: { legend: { display: false } } 
+            } 
+        }); 
     }
+
     async function loadStudentErrors() { 
-        const name = document.getElementById('studentSelect').value; if (!name) return; 
+        const name = document.getElementById('studentSelect').value; 
+        if (!name) return; 
+        
         const res = await fetch(`/api/correction/get_student/${encodeURIComponent(name)}`); 
         const data = await res.json(); 
+        
         document.getElementById('scoreVal').innerText = `${data.total_score} / ${data.paper_total}`; 
-        const container = document.getElementById('wrongIds'); container.innerHTML = ''; 
-        if (data.wrong_questions.length > 0) { data.wrong_questions.forEach(q => { const s = document.createElement('span'); s.className = 'px-2 py-1 bg-white border border-red-200 text-red-500 rounded text-xs font-bold'; s.innerText = q; container.appendChild(s); }); } 
-        else { container.innerHTML = '<span class="text-emerald-500 font-bold">🎉 Perfect Score!</span>'; } 
+        const container = document.getElementById('wrongIds'); 
+        container.innerHTML = ''; 
+        
+        if (data.wrong_questions.length > 0) { 
+            // 🔥 这里使用了自然排序，确保 Q1, Q2, Q3... Q10 顺序正确
+            data.wrong_questions.sort(naturalSort).forEach(q => { 
+                const s = document.createElement('span'); 
+                s.className = 'px-2 py-1 bg-white border border-red-200 text-red-500 rounded text-xs font-bold shadow-sm'; 
+                s.innerText = q; 
+                container.appendChild(s); 
+            }); 
+        } else { 
+            container.innerHTML = '<span class="text-emerald-500 font-bold">🎉 Perfect Score!</span>'; 
+        } 
         document.getElementById('resultArea').style.display = 'block'; 
     }
-    function downloadExcel() { const name = document.getElementById('studentSelect').value; if(name) window.location.href = `/api/correction/download/student/${encodeURIComponent(name)}`; }
-    function downloadAllScores() { window.location.href = `/api/correction/download/all`; }
+
+    function downloadExcel() { 
+        const name = document.getElementById('studentSelect').value; 
+        if(name) window.location.href = `/api/correction/download/student/${encodeURIComponent(name)}`; 
+    }
+    
+    function downloadAllScores() { 
+        window.location.href = `/api/correction/download/all`; 
+    }
 </script>
 {% endblock %}

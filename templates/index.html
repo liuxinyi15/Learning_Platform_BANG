@@ -1,40 +1,74 @@
 {% extends "base.html" %}
-{% block title %}Home - Teaching Hub BANG{% endblock %}
+
+{% block title %}Home - Teaching Hub{% endblock %}
+
 {% block content %}
 <div class="min-h-[80vh] flex flex-col items-center justify-center p-6">
+    
     <div class="text-center mb-12 animate-fade-in-up">
         <h1 class="text-4xl md:text-5xl font-black text-emerald-950 mb-4 tracking-tight">
-            <span class="inline-block hover:animate-spin cursor-default">🌿</span> Welcome Back !
+            <span class="inline-block hover:animate-spin cursor-default">🧩</span> 
+            Welcome Back !
         </h1>
-        <p class="text-emerald-800/60 font-medium text-lg">Building Adaptive Next-Generation Growth Platform</p>
+        <p class="text-emerald-800/60 font-medium text-lg">Building Adaptive Next-Generation Growth Platform.</p>
     </div>
 
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl w-full">
-        <a href="/library" class="group relative bg-white border border-slate-200 p-8 rounded-[2rem] shadow-sm hover:shadow-xl hover:border-amber-400 transition-all flex flex-col items-center text-center gap-4 no-underline overflow-hidden">
-            <div class="absolute top-0 left-0 w-full h-1.5 bg-amber-400"></div>
-            <div class="relative z-10 w-16 h-16 bg-amber-50 text-amber-600 rounded-2xl flex items-center justify-center text-3xl">📚</div>
-            <div class="relative z-10"><h2 class="text-xl font-bold text-slate-700">Material Library</h2><p class="text-slate-400 mt-2 text-xs font-medium">Manage files & teaching resources</p></div>
+        
+        <a href="/library" class="group relative bg-white border border-slate-200 p-8 rounded-[2rem] shadow-sm hover:shadow-xl hover:border-amber-400 transition-all duration-300 flex flex-col items-center text-center gap-4 no-underline overflow-hidden">
+            <div class="absolute top-0 left-0 w-full h-1.5 bg-amber-400 group-hover:h-2 transition-all"></div>
+            <div class="relative z-10 w-16 h-16 bg-amber-50 text-amber-600 rounded-2xl flex items-center justify-center text-3xl group-hover:scale-110 transition-transform">📚</div>
+            <div class="relative z-10">
+                <h2 class="text-xl font-bold text-slate-700 group-hover:text-amber-700 transition-colors">Material Library</h2>
+                <p class="text-slate-400 mt-2 text-xs font-medium">Manage files & teaching resources</p>
+            </div>
         </a>
-        <a href="/planner" class="group relative bg-white border border-slate-200 p-8 rounded-[2rem] shadow-sm hover:shadow-xl hover:border-teal-600 transition-all flex flex-col items-center text-center gap-4 no-underline overflow-hidden">
-            <div class="absolute top-0 left-0 w-full h-1.5 bg-teal-600"></div>
-            <div class="relative z-10 w-16 h-16 bg-teal-50 text-teal-700 rounded-2xl flex items-center justify-center text-3xl">📅</div>
-            <div class="relative z-10"><h2 class="text-xl font-bold text-slate-700">Lesson Planner</h2><p class="text-slate-400 mt-2 text-xs font-medium">Plan daily teaching progress</p></div>
+
+        <a href="/planner" class="group relative bg-white border border-slate-200 p-8 rounded-[2rem] shadow-sm hover:shadow-xl hover:border-teal-600 transition-all duration-300 flex flex-col items-center text-center gap-4 no-underline overflow-hidden">
+            <div class="absolute top-0 left-0 w-full h-1.5 bg-teal-600 group-hover:h-2 transition-all"></div>
+            <div class="relative z-10 w-16 h-16 bg-teal-50 text-teal-700 rounded-2xl flex items-center justify-center text-3xl group-hover:scale-110 transition-transform">📅</div>
+            <div class="relative z-10">
+                <h2 class="text-xl font-bold text-slate-700 group-hover:text-teal-800 transition-colors">Lesson Planner</h2>
+                <p class="text-slate-400 mt-2 text-xs font-medium">Plan daily teaching progress</p>
+            </div>
         </a>
-        <a href="/vocabulary" class="group relative bg-white border border-slate-200 p-8 rounded-[2rem] shadow-sm hover:shadow-xl hover:border-lime-500 transition-all flex flex-col items-center text-center gap-4 no-underline overflow-hidden">
-            <div class="absolute top-0 left-0 w-full h-1.5 bg-lime-500"></div>
-            <div class="relative z-10 w-16 h-16 bg-lime-50 text-lime-800 rounded-2xl flex items-center justify-center text-3xl">🔤</div>
-            <div class="relative z-10"><h2 class="text-xl font-bold text-slate-700">Vocab Master</h2><p class="text-slate-400 mt-2 text-xs font-medium">Word lists & Flashcards</p></div>
+
+        <a href="/vocabulary" class="group relative bg-white border border-slate-200 p-8 rounded-[2rem] shadow-sm hover:shadow-xl hover:border-lime-600 transition-all duration-300 flex flex-col items-center text-center gap-4 no-underline overflow-hidden">
+            <div class="absolute top-0 left-0 w-full h-1.5 bg-lime-600 group-hover:h-2 transition-all"></div>
+            <div class="relative z-10 w-16 h-16 bg-lime-50 text-lime-800 rounded-2xl flex items-center justify-center text-3xl group-hover:scale-110 transition-transform">🔤</div>
+            <div class="relative z-10">
+                <h2 class="text-xl font-bold text-slate-700 group-hover:text-lime-800 transition-colors">Vocab Master</h2>
+                <p class="text-slate-400 mt-2 text-xs font-medium">Word lists & Flashcards</p>
+            </div>
         </a>
-        <a href="/audio" class="group relative bg-white border border-slate-200 p-8 rounded-[2rem] shadow-sm hover:shadow-xl hover:border-emerald-600 transition-all flex flex-col items-center text-center gap-4 no-underline overflow-hidden">
-            <div class="absolute top-0 left-0 w-full h-1.5 bg-emerald-600"></div>
-            <div class="relative z-10 w-16 h-16 bg-emerald-50 text-emerald-700 rounded-2xl flex items-center justify-center text-3xl">🎧</div>
-            <div class="relative z-10"><h2 class="text-xl font-bold text-slate-700">Audio Studio</h2><p class="text-slate-400 mt-2 text-xs font-medium">Batch synthesis of audio</p></div>
+
+        <a href="/audio" class="group relative bg-white border border-slate-200 p-8 rounded-[2rem] shadow-sm hover:shadow-xl hover:border-emerald-700 transition-all duration-300 flex flex-col items-center text-center gap-4 no-underline overflow-hidden">
+            <div class="absolute top-0 left-0 w-full h-1.5 bg-emerald-700 group-hover:h-2 transition-all"></div>
+            <div class="relative z-10 w-16 h-16 bg-emerald-50 text-emerald-800 rounded-2xl flex items-center justify-center text-3xl group-hover:scale-110 transition-transform">🎧</div>
+            <div class="relative z-10">
+                <h2 class="text-xl font-bold text-slate-700 group-hover:text-emerald-900 transition-colors">Audio Studio</h2>
+                <p class="text-slate-400 mt-2 text-xs font-medium">Batch synthesis of audio</p>
+            </div>
         </a>
-        <a href="/correction" class="group relative bg-white border border-slate-200 p-8 rounded-[2rem] shadow-sm hover:shadow-xl hover:border-cyan-700 transition-all flex flex-col items-center text-center gap-4 no-underline overflow-hidden md:col-span-2 lg:col-span-2">
-            <div class="absolute top-0 left-0 w-full h-1.5 bg-cyan-700"></div>
-            <div class="relative z-10 w-16 h-16 bg-cyan-50 text-cyan-800 rounded-2xl flex items-center justify-center text-3xl">📝</div>
-            <div class="relative z-10"><h2 class="text-xl font-bold text-slate-700">Smart Grading</h2><p class="text-slate-400 mt-2 text-xs font-medium">Auto scoring & Data analysis</p></div>
+
+        <a href="/correction" class="group relative bg-white border border-slate-200 p-8 rounded-[2rem] shadow-sm hover:shadow-xl hover:border-cyan-700 transition-all duration-300 flex flex-col items-center text-center gap-4 no-underline overflow-hidden">
+            <div class="absolute top-0 left-0 w-full h-1.5 bg-cyan-700 group-hover:h-2 transition-all"></div>
+            <div class="relative z-10 w-16 h-16 bg-cyan-50 text-cyan-800 rounded-2xl flex items-center justify-center text-3xl group-hover:scale-110 transition-transform">📝</div>
+            <div class="relative z-10">
+                <h2 class="text-xl font-bold text-slate-700 group-hover:text-cyan-900 transition-colors">Smart Grading</h2>
+                <p class="text-slate-400 mt-2 text-xs font-medium">Auto scoring & Data analysis</p>
+            </div>
         </a>
+
+        <a href="/performance" class="group relative bg-white border border-slate-200 p-8 rounded-[2rem] shadow-sm hover:shadow-xl hover:border-indigo-800 transition-all duration-300 flex flex-col items-center text-center gap-4 no-underline overflow-hidden">
+            <div class="absolute top-0 left-0 w-full h-1.5 bg-indigo-900 group-hover:h-2 transition-all"></div>
+            <div class="relative z-10 w-16 h-16 bg-indigo-50 text-indigo-900 rounded-2xl flex items-center justify-center text-3xl group-hover:scale-110 transition-transform">📊</div>
+            <div class="relative z-10">
+                <h2 class="text-xl font-bold text-slate-700 group-hover:text-indigo-900 transition-colors">Performance</h2>
+                <p class="text-slate-400 mt-2 text-xs font-medium">Class trends & comparisons</p>
+            </div>
+        </a>
+
     </div>
 </div>
 
