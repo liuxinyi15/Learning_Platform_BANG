@@ -3,7 +3,7 @@
 
 ## 📖 Introduction 
 
-#### BANG is an all-in-one teaching workbench designed to empower language educators.
+### BANG is an all-in-one teaching workbench designed to empower language educators.
 
 - **What does BANG stand for?**
 
@@ -17,7 +17,7 @@
 
 ## ✨ Modules & Features
 
-#### BANG consists of **6** core modules, each distinguished by a unique theme color to represent different aspects of the teaching workflow:
+### BANG consists of **6** core modules, each distinguished by a unique theme color to represent different aspects of the teaching workflow:
 
 - **📚 Material Library**
 
@@ -131,11 +131,11 @@ BANG-Platform/
 ---
 
 ## 📢 Acknowledgements & License (致谢与许可)
-#### **Project License**
+### **Project License**
 
 This project is licensed under the MIT License.
 
-#### **Special Credits**: Audio Module
+### **Special Credits**: Audio Module
 
 The Audio Studio module (including audio_service.py and the underlying text-to-speech logic) is derived from and powered by the open-source project:
 ```Bash
