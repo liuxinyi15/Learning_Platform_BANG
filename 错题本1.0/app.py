@@ -11,7 +11,7 @@ storage = {"student_results": None, "error_records": {}, "question_bank": None}
 @app.route('/')
 def index():
     # 确保这里的文件名和你文件夹里的一模一样
-    return render_template('grade student.html')
+    return render_template('index.html')
 
 @app.route('/upload_data', methods=['POST'])
 def upload_data():
