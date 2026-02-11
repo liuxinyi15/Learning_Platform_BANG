@@ -1,33 +1,75 @@
 {% extends "base.html" %}
+
 {% block title %}首页 - 语言教学平台{% endblock %}
+
 {% block content %}
-<div class="min-h-[80vh] flex flex-col items-center justify-center p-4">
-    <h1 class="text-4xl font-black text-emerald-900 mb-10 drop-shadow-sm">🚀 欢迎回来，老师</h1>
+<div class="min-h-[80vh] flex flex-col items-center justify-center p-6">
+    
+    <div class="text-center mb-12 animate-fade-in-up">
+        <h1 class="text-4xl md:text-5xl font-black text-emerald-900 mb-4 tracking-tight">
+            <span class="inline-block hover:animate-spin cursor-default">🌻</span> 
+            欢迎回来，老师
+        </h1>
+        <p class="text-emerald-700/60 font-medium text-lg">今天也是充满活力的一天，准备好开始教学了吗？</p>
+    </div>
 
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl w-full">
-        <a href="/library" class="group bg-white border border-emerald-100 p-8 rounded-3xl shadow-lg shadow-emerald-900/5 hover:shadow-2xl hover:shadow-emerald-900/10 hover:-translate-y-2 transition duration-300 flex flex-col items-center text-center no-underline">
-            <div class="text-6xl mb-4 group-hover:scale-110 transition">📚</div>
-            <div class="text-xl font-bold mb-2 text-emerald-900">素材资料库</div>
-            <div class="text-sm text-emerald-700/60">管理课件、文档与多语言资源</div>
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-5xl w-full">
+        
+        <a href="/library" class="group relative bg-white border border-amber-100 p-8 rounded-[2rem] shadow-sm hover:shadow-2xl hover:shadow-amber-100/60 hover:border-amber-300 transition-all duration-300 flex items-center gap-6 no-underline overflow-hidden">
+            <div class="absolute -right-12 -top-12 w-40 h-40 bg-amber-50 rounded-full group-hover:scale-125 transition-transform duration-500 ease-out"></div>
+            <div class="relative z-10 w-20 h-20 flex-shrink-0 bg-amber-100 text-amber-600 rounded-2xl flex items-center justify-center text-4xl group-hover:rotate-6 transition-transform duration-300">
+                📚
+            </div>
+            <div class="relative z-10 text-left">
+                <h2 class="text-2xl font-bold text-slate-700 group-hover:text-amber-700 transition-colors">素材资料库</h2>
+                <p class="text-slate-400 mt-1 text-sm font-medium group-hover:text-slate-500">管理您的课件、文档与多语言教学资源</p>
+            </div>
         </a>
 
-        <a href="/planner" class="group bg-white border border-emerald-100 p-8 rounded-3xl shadow-lg shadow-emerald-900/5 hover:shadow-2xl hover:shadow-emerald-900/10 hover:-translate-y-2 transition duration-300 flex flex-col items-center text-center no-underline">
-            <div class="text-6xl mb-4 group-hover:scale-110 transition">📅</div>
-            <div class="text-xl font-bold mb-2 text-emerald-900">备课事项管理</div>
-            <div class="text-sm text-emerald-700/60">追踪教学进度与重点备课任务</div>
+        <a href="/planner" class="group relative bg-white border border-orange-100 p-8 rounded-[2rem] shadow-sm hover:shadow-2xl hover:shadow-orange-100/60 hover:border-orange-300 transition-all duration-300 flex items-center gap-6 no-underline overflow-hidden">
+            <div class="absolute -right-12 -top-12 w-40 h-40 bg-orange-50 rounded-full group-hover:scale-125 transition-transform duration-500 ease-out"></div>
+            <div class="relative z-10 w-20 h-20 flex-shrink-0 bg-orange-100 text-orange-600 rounded-2xl flex items-center justify-center text-4xl group-hover:rotate-6 transition-transform duration-300">
+                📅
+            </div>
+            <div class="relative z-10 text-left">
+                <h2 class="text-2xl font-bold text-slate-700 group-hover:text-orange-700 transition-colors">备课管理</h2>
+                <p class="text-slate-400 mt-1 text-sm font-medium group-hover:text-slate-500">追踪教学进度，安排每日重点备课任务</p>
+            </div>
         </a>
 
-        <a href="/vocabulary" class="group bg-white border border-emerald-100 p-8 rounded-3xl shadow-lg shadow-emerald-900/5 hover:shadow-2xl hover:shadow-emerald-900/10 hover:-translate-y-2 transition duration-300 flex flex-col items-center text-center no-underline">
-            <div class="text-6xl mb-4 group-hover:scale-110 transition">🔤</div>
-            <div class="text-xl font-bold mb-2 text-emerald-900">词汇特训营</div>
-            <div class="text-sm text-emerald-700/60">词汇表管理、闪卡与音频生成</div>
+        <a href="/vocabulary" class="group relative bg-white border border-lime-100 p-8 rounded-[2rem] shadow-sm hover:shadow-2xl hover:shadow-lime-100/60 hover:border-lime-300 transition-all duration-300 flex items-center gap-6 no-underline overflow-hidden">
+            <div class="absolute -right-12 -top-12 w-40 h-40 bg-lime-50 rounded-full group-hover:scale-125 transition-transform duration-500 ease-out"></div>
+            <div class="relative z-10 w-20 h-20 flex-shrink-0 bg-lime-100 text-lime-600 rounded-2xl flex items-center justify-center text-4xl group-hover:rotate-6 transition-transform duration-300">
+                🔤
+            </div>
+            <div class="relative z-10 text-left">
+                <h2 class="text-2xl font-bold text-slate-700 group-hover:text-lime-700 transition-colors">词汇特训营</h2>
+                <p class="text-slate-400 mt-1 text-sm font-medium group-hover:text-slate-500">创建词汇表、生成闪卡与听力练习</p>
+            </div>
         </a>
 
-        <a href="/audio" class="group bg-white border border-emerald-100 p-8 rounded-3xl shadow-lg shadow-emerald-900/5 hover:shadow-2xl hover:shadow-emerald-900/10 hover:-translate-y-2 transition duration-300 flex flex-col items-center text-center no-underline">
-            <div class="text-6xl mb-4 group-hover:scale-110 transition">🎧</div>
-            <div class="text-xl font-bold mb-2 text-emerald-900">音频工具箱</div>
-            <div class="text-sm text-emerald-700/60">批量上传 Excel 制作听力音频</div>
+        <a href="/audio" class="group relative bg-white border border-emerald-100 p-8 rounded-[2rem] shadow-sm hover:shadow-2xl hover:shadow-emerald-100/60 hover:border-emerald-300 transition-all duration-300 flex items-center gap-6 no-underline overflow-hidden">
+            <div class="absolute -right-12 -top-12 w-40 h-40 bg-emerald-50 rounded-full group-hover:scale-125 transition-transform duration-500 ease-out"></div>
+            <div class="relative z-10 w-20 h-20 flex-shrink-0 bg-emerald-100 text-emerald-600 rounded-2xl flex items-center justify-center text-4xl group-hover:rotate-6 transition-transform duration-300">
+                🎧
+            </div>
+            <div class="relative z-10 text-left">
+                <h2 class="text-2xl font-bold text-slate-700 group-hover:text-emerald-700 transition-colors">音频工具箱</h2>
+                <p class="text-slate-400 mt-1 text-sm font-medium group-hover:text-slate-500">批量上传 Excel 制作专业听力音频</p>
+            </div>
         </a>
+
     </div>
 </div>
+
+<style>
+    /* 简单的入场动画 */
+    @keyframes fadeInUp {
+        from { opacity: 0; transform: translateY(20px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+    .animate-fade-in-up {
+        animation: fadeInUp 0.6s ease-out forwards;
+    }
+</style>
 {% endblock %}

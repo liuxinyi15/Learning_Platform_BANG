@@ -1,59 +1,93 @@
 {% extends "base.html" %}
+
 {% block title %}素材资料库{% endblock %}
+
 {% block head %}
 <style>
-    /* 深绿主题定制 */
-    .controls-card { background: rgba(255,255,255,0.8); border: 1px solid #d1fae5; }
-    .tabs { background: #ecfccb; }
-    .tab-btn { color: #3f6212; }
-    .tab-btn:hover { background: rgba(255,255,255,0.6); }
-    .tab-btn.active { background: #fff; color: #166534; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+    /* 💛 黄色主题定制 */
+    .controls-card { 
+        background: white; 
+        border-radius: 16px; 
+        border: 1px solid #f3f4f6; 
+        margin-bottom: 24px; 
+        overflow: hidden; /* 关键：为了切掉顶部彩条的圆角 */
+    }
+    .controls-content {
+        padding: 15px; 
+        display: flex; 
+        justify-content: space-between; 
+        align-items: center;
+    }
+
+    .tabs { background: #fffbeb; padding: 4px; border-radius: 12px; display: flex; gap: 4px; }
+    .tab-btn { padding: 8px 16px; border-radius: 8px; font-weight: 700; font-size: 0.875rem; color: #92400e; text-decoration: none; transition: all 0.2s; }
+    .tab-btn:hover { background: #fff; color: #d97706; }
+    .tab-btn.active { background: #fcd34d; color: #78350f; box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
     
-    .upload-card { background: rgba(255,255,255,0.9); border: 1px dashed #059669; }
-    .book-card { background: white; border: 1px solid #e5e7eb; }
-    .book-tag { background: #ecfdf5; color: #047857; }
-    .download-link { color: #059669; }
+    .upload-card { background: #fffbeb; border: 2px dashed #fcd34d; padding: 24px; border-radius: 16px; margin-bottom: 32px; }
+    .book-card { background: white; border: 1px solid #f3f4f6; transition: all 0.2s; border-radius: 12px; overflow: hidden; }
+    .book-card:hover { border-color: #fcd34d; box-shadow: 0 10px 15px -3px rgba(251, 191, 36, 0.1); transform: translateY(-4px); }
+    .book-tag { background: #fef3c7; color: #b45309; padding: 2px 8px; border-radius: 6px; font-size: 11px; font-weight: 700; }
+    .download-link { color: #d97706; font-weight: bold; text-decoration: none; font-size: 0.875rem; display: flex; align-items: center; gap: 4px; margin-top: auto; }
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="max-w-[1200px] mx-auto p-6">
-    <h1 class="text-3xl font-black text-emerald-900 text-center mb-8">📚 语言学习资料库</h1>
+<div class="max-w-[1200px] mx-auto p-6 fade-in-up">
+    
+    <header class="text-center mb-10">
+        <div class="inline-flex items-center justify-center w-16 h-16 bg-amber-100 text-amber-600 rounded-2xl text-3xl mb-4 shadow-sm">📚</div>
+        <h1 class="text-3xl font-black text-slate-800">素材资料库</h1>
+        <p class="text-slate-400 mt-2 text-sm font-medium">管理您的课件、文档与多语言教学资源</p>
+    </header>
 
-    {% if error %} <div class="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mb-4 rounded">{{ error }}</div> {% endif %}
-    {% if success %} <div class="bg-emerald-100 border-l-4 border-emerald-500 text-emerald-800 p-4 mb-4 rounded">{{ success }}</div> {% endif %}
+    {% if error %} <div class="bg-red-50 border-l-4 border-red-500 text-red-700 p-4 mb-6 rounded-lg shadow-sm">{{ error }}</div> {% endif %}
+    {% if success %} <div class="bg-green-50 border-l-4 border-green-500 text-green-700 p-4 mb-6 rounded-lg shadow-sm">{{ success }}</div> {% endif %}
 
-    <div class="controls-card p-4 rounded-xl flex justify-between items-center mb-6 shadow-sm">
-        <div class="tabs p-1 rounded-lg flex gap-1">
-            <a href="/library?tab=official&sort={{ sort_option }}" class="tab-btn px-4 py-2 rounded-md font-bold text-sm transition {% if active_tab == 'official' %}active{% endif %}">🏛️ 官方推荐</a>
-            <a href="/library?tab=user&sort={{ sort_option }}" class="tab-btn px-4 py-2 rounded-md font-bold text-sm transition {% if active_tab == 'user' %}active{% endif %}">☁️ 我的上传</a>
+    <div class="controls-card shadow-sm">
+        <div class="h-1.5 bg-gradient-to-r from-amber-300 via-yellow-400 to-orange-300"></div>
+        
+        <div class="controls-content">
+            <div class="tabs">
+                <a href="/library?tab=official&sort={{ sort_option }}" class="tab-btn {% if active_tab == 'official' %}active{% endif %}">🏛️ 官方推荐</a>
+                <a href="/library?tab=user&sort={{ sort_option }}" class="tab-btn {% if active_tab == 'user' %}active{% endif %}">☁️ 我的上传</a>
+            </div>
+            <form action="/library" method="GET" class="flex items-center gap-2">
+                <input type="hidden" name="tab" value="{{ active_tab }}">
+                <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">Sort by</span>
+                <select name="sort" onchange="this.form.submit()" class="p-2 pl-3 pr-8 border border-slate-200 rounded-lg bg-white text-sm text-slate-600 outline-none hover:border-amber-400 focus:border-amber-500 focus:ring-2 focus:ring-amber-200 transition appearance-none cursor-pointer" style="background-image: url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%23b45309%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E'); background-repeat: no-repeat; background-position: right .7em top 50%; background-size: .65em auto;">
+                    <option value="newest" {% if sort_option == 'newest' %}selected{% endif %}>🕒 最新上传</option>
+                    <option value="oldest" {% if sort_option == 'oldest' %}selected{% endif %}>📅 最早上传</option>
+                    <option value="a-z" {% if sort_option == 'a-z' %}selected{% endif %}>🔤 名称 A-Z</option>
+                </select>
+            </form>
         </div>
-        <form action="/library" method="GET" class="flex items-center gap-2">
-            <input type="hidden" name="tab" value="{{ active_tab }}">
-            <span class="text-sm font-bold text-emerald-700">排序:</span>
-            <select name="sort" onchange="this.form.submit()" class="p-2 border border-emerald-200 rounded-lg bg-white text-sm text-emerald-800 outline-none">
-                <option value="newest" {% if sort_option == 'newest' %}selected{% endif %}>🕒 最新上传</option>
-                <option value="oldest" {% if sort_option == 'oldest' %}selected{% endif %}>📅 最早上传</option>
-                <option value="a-z" {% if sort_option == 'a-z' %}selected{% endif %}>🔤 名称 A-Z</option>
-            </select>
-        </form>
     </div>
 
     <div class="{% if active_tab != 'official' %}hidden{% endif %}">
         {% if official_materials|length == 0 %}
-            <div class="text-center py-20 text-emerald-800/40">暂无官方素材</div>
+            <div class="text-center py-24 bg-slate-50 rounded-2xl border border-dashed border-slate-200">
+                <div class="text-4xl mb-2 opacity-30">📭</div>
+                <div class="text-slate-400 font-medium">暂无官方素材</div>
+            </div>
         {% else %}
             <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-6">
                 {% for m in official_materials %}
-                <div class="book-card rounded-xl overflow-hidden shadow-sm hover:shadow-lg transition flex flex-col">
-                    <div class="h-32 bg-emerald-50 flex items-center justify-center text-4xl">
-                        {% if m.cover_path %} <img src="/library/cover/{{ m.id }}" class="w-full h-full object-cover"> {% else %} 📖 {% endif %}
+                <div class="book-card flex flex-col h-full group">
+                    <div class="h-36 bg-amber-50 flex items-center justify-center text-5xl group-hover:bg-amber-100 transition-colors relative overflow-hidden">
+                        {% if m.cover_path %} 
+                            <img src="/library/cover/{{ m.id }}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"> 
+                        {% else %} 
+                            📖 
+                        {% endif %}
                     </div>
-                    <div class="p-4 flex-1 flex flex-col">
-                        <span class="book-tag text-[10px] px-2 py-1 rounded w-fit font-bold mb-2">{{ m.category }}</span>
-                        <div class="font-bold text-slate-800 mb-1 truncate">{{ m.filename }}</div>
-                        <div class="text-xs text-slate-400 mb-4">{{ m.upload_time[:10] }}</div>
-                        <a href="/library/download/{{ m.id }}" class="download-link text-sm font-bold mt-auto flex items-center gap-1">⬇️ 下载</a>
+                    <div class="p-5 flex-1 flex flex-col">
+                        <span class="book-tag w-fit mb-2">{{ m.category }}</span>
+                        <div class="font-bold text-slate-700 mb-1 truncate text-base group-hover:text-amber-700 transition-colors" title="{{ m.filename }}">{{ m.filename }}</div>
+                        <div class="text-xs text-slate-400 mb-4 font-medium">{{ m.upload_time[:10] }}</div>
+                        <a href="/library/download/{{ m.id }}" class="download-link hover:text-amber-600 transition-colors">
+                            <span>⬇️</span> 下载文件
+                        </a>
                     </div>
                 </div>
                 {% endfor %}
@@ -62,44 +96,56 @@
     </div>
 
     <div class="{% if active_tab != 'user' %}hidden{% endif %}">
-        <div class="upload-card p-6 rounded-xl mb-8 shadow-sm">
+        <div class="upload-card shadow-sm group hover:border-amber-400 transition-colors">
+            <h3 class="text-amber-800 font-bold mb-4 flex items-center gap-2">
+                <span class="bg-amber-200 w-6 h-6 rounded-full flex items-center justify-center text-xs">↑</span> 
+                上传新素材
+            </h3>
             <form method="POST" enctype="multipart/form-data" class="flex flex-wrap gap-4 items-end">
                 <div class="flex-1 min-w-[200px]">
-                    <label class="block text-xs font-bold text-emerald-800 mb-1">文件 (支持批量)</label>
+                    <label class="block text-xs font-bold text-slate-500 mb-1.5 uppercase tracking-wider">文件 (支持批量)</label>
                     <div class="relative">
-                        <input type="file" name="material_file" id="fileInput" multiple required class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" onchange="document.getElementById('fileLabel').innerText = `已选 ${this.files.length} 个文件`">
-                        <div class="w-full p-2.5 bg-white border border-emerald-200 rounded-lg text-sm text-emerald-600 truncate" id="fileLabel">点击选择...</div>
+                        <input type="file" name="material_file" id="fileInput" multiple required 
+                               class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" 
+                               onchange="document.getElementById('fileLabel').innerText = `已选 ${this.files.length} 个文件`; document.getElementById('fileLabel').classList.add('text-amber-600', 'font-bold')">
+                        <div class="w-full p-3 bg-white border border-slate-200 rounded-xl text-sm text-slate-400 truncate flex items-center gap-2" id="fileLabel">
+                            <span>📂</span> 点击选择...
+                        </div>
                     </div>
                 </div>
                 <div class="flex-1 min-w-[200px]">
-                    <label class="block text-xs font-bold text-emerald-800 mb-1">封面 (可选)</label>
-                    <input type="file" name="cover_file" accept="image/*" class="w-full p-2 bg-white border border-emerald-200 rounded text-sm">
+                    <label class="block text-xs font-bold text-slate-500 mb-1.5 uppercase tracking-wider">封面 (可选)</label>
+                    <input type="file" name="cover_file" accept="image/*" class="w-full p-3 bg-white border border-slate-200 rounded-xl text-sm text-slate-500 file:mr-4 file:py-1 file:px-2 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-amber-100 file:text-amber-700 hover:file:bg-amber-200">
                 </div>
                 <div class="flex-1 min-w-[200px]">
-                    <label class="block text-xs font-bold text-emerald-800 mb-1">分类</label>
+                    <label class="block text-xs font-bold text-slate-500 mb-1.5 uppercase tracking-wider">分类</label>
                     <div class="flex gap-2">
-                        <select name="category_select" class="p-2 border border-emerald-200 rounded bg-white flex-1 text-sm text-emerald-900">
+                        <select name="category_select" class="p-3 border border-slate-200 rounded-xl bg-white flex-1 text-sm outline-none focus:ring-2 focus:ring-amber-200">
                             {% for cat in categories %}<option value="{{ cat }}">{{ cat }}</option>{% endfor %}
                         </select>
-                        <input type="text" name="category_new" placeholder="新建" class="p-2 border border-emerald-200 rounded w-24 text-sm">
+                        <input type="text" name="category_new" placeholder="新建" class="p-3 border border-slate-200 rounded-xl w-24 text-sm outline-none focus:ring-2 focus:ring-amber-200">
                     </div>
                 </div>
-                <button type="submit" class="bg-emerald-600 text-white px-6 py-2.5 rounded font-bold hover:bg-emerald-700 transition shadow-md">☁️ 上传</button>
+                <button type="submit" class="bg-amber-500 text-white px-8 py-3 rounded-xl font-bold hover:bg-amber-600 transition shadow-lg shadow-amber-200 transform hover:-translate-y-0.5 active:translate-y-0 flex items-center gap-2">
+                    ☁️ 上传
+                </button>
             </form>
         </div>
 
         <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-6">
             {% for m in user_materials %}
-            <div class="book-card rounded-xl overflow-hidden shadow-sm hover:shadow-lg transition flex flex-col relative group">
-                <a href="/library/delete/{{ m.id }}" class="absolute top-2 right-2 w-6 h-6 bg-white/90 rounded-full text-red-500 flex items-center justify-center font-bold shadow-sm opacity-0 group-hover:opacity-100 transition z-10">×</a>
-                <div class="h-32 bg-slate-50 flex items-center justify-center text-4xl">
+            <div class="book-card flex flex-col h-full group relative">
+                <a href="/library/delete/{{ m.id }}" class="absolute top-2 right-2 w-7 h-7 bg-white/90 rounded-full text-slate-400 hover:text-red-500 flex items-center justify-center font-bold shadow-md opacity-0 group-hover:opacity-100 transition-all z-20 hover:scale-110">×</a>
+                <div class="h-36 bg-slate-50 flex items-center justify-center text-5xl group-hover:bg-slate-100 transition-colors">
                     {% if m.cover_path %} <img src="/library/cover/{{ m.id }}" class="w-full h-full object-cover"> {% else %} ☁️ {% endif %}
                 </div>
-                <div class="p-4 flex-1 flex flex-col">
-                    <span class="book-tag text-[10px] px-2 py-1 rounded w-fit font-bold mb-2">{{ m.category }}</span>
-                    <div class="font-bold text-slate-800 mb-1 truncate">{{ m.filename }}</div>
-                    <div class="text-xs text-slate-400 mb-4">{{ m.upload_time[:10] }}</div>
-                    <a href="/library/download/{{ m.id }}" class="download-link text-sm font-bold mt-auto flex items-center gap-1">⬇️ 下载</a>
+                <div class="p-5 flex-1 flex flex-col">
+                    <span class="book-tag w-fit mb-2 bg-slate-100 text-slate-600">{{ m.category }}</span>
+                    <div class="font-bold text-slate-700 mb-1 truncate text-base" title="{{ m.filename }}">{{ m.filename }}</div>
+                    <div class="text-xs text-slate-400 mb-4 font-medium">{{ m.upload_time[:10] }}</div>
+                    <a href="/library/download/{{ m.id }}" class="download-link hover:text-amber-600 transition-colors">
+                        <span>⬇️</span> 下载文件
+                    </a>
                 </div>
             </div>
             {% endfor %}
