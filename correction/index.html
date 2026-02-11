@@ -2,71 +2,129 @@
 <html lang="zh">
 <head>
     <meta charset="UTF-8">
-    <title>错题本自动化系统 - 简化版</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>学生错题本自动化系统</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.7.0/dist/chart.min.js"></script>
     <style>
-        body { background-color: #f4f7f6; }
-        .upload-card { border: none; border-radius: 15px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
-        .step-num { width: 30px; height: 30px; background: #0d6efd; color: white; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; margin-right: 10px; }
-        .badge-custom { font-size: 0.9rem; padding: 8px 15px; margin: 4px; border-radius: 50px; }
+        body { background-color: #f5f7fa; font-family: 'PingFang SC', sans-serif; }
+        .card { border: none; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
+        .file-box { border: 2px dashed #d1d5db; padding: 20px; border-radius: 12px; position: relative; background: white; transition: 0.3s; cursor: pointer; }
+        .file-ready { border-color: #198754; background-color: #f8fffb; }
+        .delete-btn { position: absolute; top: 8px; right: 8px; cursor: pointer; color: #dc3545; display: none; font-size: 1.2rem; z-index: 10; }
+        .file-ready .delete-btn { display: block; }
+        .hidden-input { display: none; }
+        .summary-card { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; }
+        .ref-link { text-decoration: none; font-size: 0.85rem; transition: 0.2s; }
+        .ref-link:hover { text-decoration: underline; opacity: 0.8; }
+        #errorDistributionChartContainer {
+            width: 100%;
+            max-height: 400px; /* 限制图表高度 */
+            overflow-x: auto; /* 当图表过宽时可滚动 */
+            margin-top: 20px;
+        }
+        #errorDistributionChart {
+            min-width: 400px; /* 确保图表有最小宽度 */
+        }
     </style>
 </head>
 <body>
 
 <div class="container py-5">
-    <div class="text-center mb-5">
-        <h2 class="fw-bold text-primary"><i class="bi bi-journal-check"></i> 学生错题本生成系统</h2>
-        <p class="text-muted">仅需两个文件，自动完成打分与错题提取</p>
-    </div>
+    <header class="text-center mb-5">
+        <h1 class="fw-bold text-primary">学生错题本生成系统</h1>
+        <p class="text-muted">自动化打分、汇总成绩、导出个性化错题本</p>
+    </header>
 
     <div class="row g-4">
-        <div class="col-md-5">
-            <div class="card upload-card p-4 h-100">
-                <h5 class="mb-4"><span class="step-num">1</span>上传数据</h5>
+        <div class="col-lg-5">
+            <div class="card p-4 h-100">
+                <h5 class="fw-bold mb-4"><i class="bi bi-upload me-2"></i>上传数据源</h5>
                 
                 <div class="mb-4">
-                    <label class="form-label fw-bold small text-secondary">1. 学生答题卡 (含姓名、题号列)</label>
-                    <input type="file" class="form-control form-control-lg" id="file_stu" accept=".xlsx,.xls">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <label class="form-label small fw-bold text-secondary mb-0">1. 学生答题卡 (Excel)</label>
+                        <a href="javascript:void(0)" class="ref-link text-primary" onclick="showRef('stu')">
+                            <i class="bi bi-info-circle me-1"></i>查看格式参考
+                        </a>
+                    </div>
+                    <div id="stu_box" class="file-box text-center">
+                        <input type="file" class="form-control" id="file_stu" onchange="handleFileSelect('stu')" accept=".xlsx,.xls">
+                        <div id="stu_info" class="mt-2 d-none">
+                            <i class="bi bi-file-earmark-spreadsheet text-success fs-3"></i>
+                            <div id="stu_name" class="small mt-1 text-truncate px-3"></div>
+                        </div>
+                        <i class="bi bi-x-circle-fill delete-btn" onclick="removeFile('stu')"></i>
+                    </div>
                 </div>
 
                 <div class="mb-4">
-                    <label class="form-label fw-bold small text-secondary">2. 综合题库 (含题号/答案/分值/解析)</label>
-                    <input type="file" class="form-control form-control-lg" id="file_bank" accept=".xlsx,.xls">
-                    <div class="form-text mt-2"><i class="bi bi-info-circle"></i> 系统会自动读取前三列作为判分依据，剩余列作为错题本内容。</div>
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <label class="form-label small fw-bold text-secondary mb-0">2. 综合题库 (含解析/分值)</label>
+                        <a href="javascript:void(0)" class="ref-link text-primary" onclick="showRef('bank')">
+                            <i class="bi bi-info-circle me-1"></i>查看格式参考
+                        </a>
+                    </div>
+                    <div id="bank_box" class="file-box text-center">
+                        <input type="file" class="form-control" id="file_bank" onchange="handleFileSelect('bank')" accept=".xlsx,.xls">
+                        <div id="bank_info" class="mt-2 d-none">
+                            <i class="bi bi-file-earmark-check text-success fs-3"></i>
+                            <div id="bank_name" class="small mt-1 text-truncate px-3"></div>
+                        </div>
+                        <i class="bi bi-x-circle-fill delete-btn" onclick="removeFile('bank')"></i>
+                    </div>
                 </div>
 
-                <button class="btn btn-primary btn-lg w-100 mt-2" id="uploadBtn" onclick="uploadFiles()">
-                    <i class="bi bi-lightning-fill"></i> 开始分析数据
+                <button class="btn btn-primary btn-lg w-100 py-3 fw-bold shadow-sm" id="uploadBtn" onclick="uploadFiles()">
+                    <i class="bi bi-cpu-fill me-2"></i> 开始分析数据
                 </button>
             </div>
         </div>
 
-        <div class="col-md-7">
-            <div class="card upload-card p-4 h-100">
-                <h5 class="mb-4"><span class="step-num">2</span>查看与下载</h5>
-                
-                <div class="row g-2 mb-4">
-                    <div class="col-8">
+        <div class="col-lg-7">
+            <div class="card summary-card p-4 mb-4 shadow">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h5 class="fw-bold mb-1">全班成绩汇总</h5>
+                        <div id="summaryStatus" class="small opacity-75">等待数据上传...</div>
+                    </div>
+                    <button class="btn btn-light fw-bold" id="downloadAllBtn" onclick="downloadAllScores()" disabled>
+                        <i class="bi bi-cloud-download-fill me-1"></i> 导出总表
+                    </button>
+                </div>
+            </div>
+
+            <div class="card p-4 mb-4">
+                <h5 class="fw-bold mb-3 text-dark"><i class="bi bi-bar-chart-fill me-2"></i>错题分布概览</h5>
+                <div id="errorDistributionChartContainer">
+                    <canvas id="errorDistributionChart"></canvas>
+                </div>
+                <div id="chartStatus" class="text-center text-muted small mt-2">上传数据后显示错题分布图</div>
+            </div>
+
+            <div class="card p-4">
+                <h5 class="fw-bold mb-4 text-dark"><i class="bi bi-person-bounding-box me-2"></i>个人错题详情</h5>
+                <div class="row g-3 mb-4">
+                    <div class="col-sm-7">
                         <select id="studentSelect" class="form-select form-select-lg" onchange="loadStudentErrors()">
-                            <option value="">-- 请先上传文件 --</option>
+                            <option value="">-- 请先完成上传 --</option>
                         </select>
                     </div>
-                    <div class="col-4">
-                        <div class="bg-light p-2 rounded text-center border h-100 d-flex flex-column justify-content-center">
-                            <small class="text-muted d-block">总分</small>
-                            <strong class="text-primary h5 mb-0" id="scoreVal">--</strong>
+                    <div class="col-sm-5">
+                        <div class="h-100 d-flex align-items-center justify-content-center border rounded bg-light p-2">
+                            <span class="text-muted small me-2">得分/总分:</span>
+                            <strong class="text-primary fs-5" id="scoreVal">-- / --</strong>
                         </div>
                     </div>
                 </div>
-
                 <div id="resultArea" style="display:none;">
-                    <div class="p-3 bg-light rounded mb-4">
-                        <p class="small fw-bold text-danger mb-2"><i class="bi bi-x-circle-fill"></i> 错题列表：</p>
+                    <div class="alert alert-light border mb-4">
+                        <h6 class="fw-bold text-danger mb-3"><i class="bi bi-x-octagon-fill me-2"></i>错题题号：</h6>
                         <div id="wrongIds" class="d-flex flex-wrap"></div>
                     </div>
-                    <button class="btn btn-success btn-lg w-100" onclick="downloadExcel()">
-                        <i class="bi bi-file-earmark-excel"></i> 下载专属错题本 (Excel)
+                    <button class="btn btn-success btn-lg w-100 py-3 fw-bold" onclick="downloadExcel()">
+                        <i class="bi bi-file-earmark-arrow-down me-2"></i> 下载个人错题本
                     </button>
                 </div>
             </div>
@@ -74,81 +132,234 @@
     </div>
 </div>
 
+<div class="modal fade" id="refModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title fw-bold" id="refTitle">格式参考</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body text-center">
+                <p id="refDesc" class="text-muted mb-3 small"></p>
+                <img id="refImg" src="" class="img-fluid border rounded shadow-sm" alt="示例图片">
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 <script>
     const API_BASE_URL = 'http://127.0.0.1:5000';
+
+    // 存储题目内容的映射，方便tooltip查找
+    let questionContentMap = {}; 
+    let errorChart = null; // 用于存储 Chart 实例
+
+    function showRef(type) {
+        const modal = new bootstrap.Modal(document.getElementById('refModal'));
+        const title = document.getElementById('refTitle');
+        const desc = document.getElementById('refDesc');
+        const img = document.getElementById('refImg');
+        const version = new Date().getTime(); // 生成时间戳，防止缓存
+
+        if(type === 'stu') {
+            title.innerText = "学生答题卡格式示例";
+            desc.innerText = "请上传 Excel 文档。首列为学生姓名，后续各列名为题号（如 QQ1, QQ2...），下方对应填入选项。";
+            img.src = `/static/stu_ref.png?v=${version}`; 
+        } else {
+            title.innerText = "综合题库格式示例";
+            desc.innerText = "请上传 Excel 文档。必须包含：题号、正确答案、得分（分值）等列，可包含题目内容和解析。";
+            img.src = `/static/bank_ref.png?v=${version}`;
+        }
+        modal.show();
+    }
+
+    function handleFileSelect(type) {
+        const input = document.getElementById(`file_${type}`);
+        const box = document.getElementById(`${type}_box`);
+        const info = document.getElementById(`${type}_info`);
+        const nameDisplay = document.getElementById(`${type}_name`);
+        if (input.files.length > 0) {
+            box.classList.add('file-ready');
+            nameDisplay.innerText = input.files[0].name;
+            info.classList.remove('d-none');
+            input.classList.add('hidden-input');
+        }
+    }
+
+    async function removeFile(type) {
+        const input = document.getElementById(`file_${type}`);
+        const box = document.getElementById(`${type}_box`);
+        const info = document.getElementById(`${type}_info`);
+        input.value = '';
+        input.classList.remove('hidden-input');
+        box.classList.remove('file-ready');
+        info.classList.add('d-none');
+        await fetch(`${API_BASE_URL}/clear_data`, { method: 'POST' });
+        resetUI();
+    }
+
+    function resetUI() {
+        document.getElementById('studentSelect').innerHTML = '<option value="">-- 请上传文件 --</option>';
+        document.getElementById('resultArea').style.display = 'none';
+        document.getElementById('downloadAllBtn').disabled = true;
+        document.getElementById('summaryStatus').innerText = '等待数据上传...';
+        document.getElementById('scoreVal').innerText = '-- / --';
+        document.getElementById('chartStatus').innerText = '上传数据后显示错题分布图';
+
+        // 销毁旧图表
+        if (errorChart) {
+            errorChart.destroy();
+            errorChart = null;
+        }
+        questionContentMap = {}; // 清空题目内容映射
+    }
 
     async function uploadFiles() {
         const fileStu = document.getElementById('file_stu').files[0];
         const fileBank = document.getElementById('file_bank').files[0];
-        const btn = document.getElementById('uploadBtn');
+        if (!fileStu || !fileBank) return alert("请确保两个文件都已选择！");
 
-        if (!fileStu || !fileBank) {
-            alert("❌ 请同时选择【学生答题卡】和【综合题库】");
-            return;
-        }
+        const btn = document.getElementById('uploadBtn');
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> 正在分析数据...';
+        document.getElementById('chartStatus').innerText = '正在生成错题分布图...';
 
         const formData = new FormData();
         formData.append('student_ans', fileStu);
         formData.append('combined_bank', fileBank);
 
-        btn.disabled = true;
-        btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> 处理中...';
-
         try {
             const res = await fetch(`${API_BASE_URL}/upload_data`, { method: 'POST', body: formData });
             const data = await res.json();
+            if (data.error) throw new Error(data.error);
+
+            const select = document.getElementById('studentSelect');
+            select.innerHTML = '<option value="">-- 选择学生 --</option>';
+            data.students.forEach(name => select.add(new Option(name, name)));
             
-            if (data.error) {
-                alert("错误: " + data.error);
-            } else {
-                const select = document.getElementById('studentSelect');
-                select.innerHTML = '<option value="">-- 选择学生 --</option>';
-                data.students.forEach(name => {
-                    const opt = document.createElement('option');
-                    opt.value = name;
-                    opt.textContent = name;
-                    select.appendChild(opt);
-                });
-                alert(`✅ 成功识别 ${data.students.length} 名学生`);
-            }
-        } catch (error) {
-            alert("❌ 服务器连接失败");
+            document.getElementById('downloadAllBtn').disabled = false;
+            document.getElementById('summaryStatus').innerHTML = `✅ 分析成功！卷面总分：${data.paper_total}`;
+            alert("数据分析完成！");
+
+            // --- 调用图表渲染函数 ---
+            // 构建题目内容映射
+            questionContentMap = data.all_questions_info.reduce((acc, q) => {
+                acc[q.q_id] = q.content;
+                return acc;
+            }, {});
+            renderErrorDistributionChart(data.question_error_counts);
+            document.getElementById('chartStatus').innerText = ''; // 清除图表状态
+        } catch (e) {
+            alert("分析失败: " + e.message);
+            document.getElementById('chartStatus').innerText = '图表生成失败';
         } finally {
             btn.disabled = false;
-            btn.innerHTML = '<i class="bi bi-lightning-fill"></i> 开始分析数据';
+            btn.innerHTML = '<i class="bi bi-cpu-fill me-2"></i> 开始分析数据';
         }
+    }
+
+    // --- 新增：渲染错题分布柱状图 ---
+    function renderErrorDistributionChart(errorCounts) {
+        const ctx = document.getElementById('errorDistributionChart').getContext('2d');
+        const labels = Object.keys(errorCounts);
+        const data = Object.values(errorCounts);
+
+        if (errorChart) { // 如果图表已存在，先销毁
+            errorChart.destroy();
+        }
+
+        errorChart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: '错误人数',
+                    data: data,
+                    backgroundColor: 'rgba(255, 99, 132, 0.6)',
+                    borderColor: 'rgba(255, 99, 132, 1)',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false, // 允许手动设置 canvas 尺寸
+                plugins: {
+                    legend: {
+                        display: false // 不显示图例
+                    },
+                    tooltip: {
+                        enabled: true,
+                        callbacks: {
+                            title: function(tooltipItems) {
+                                // 显示题号
+                                return '题号：' + tooltipItems[0].label;
+                            },
+                            label: function(tooltipItem) {
+                                // 显示错误人数
+                                let label = '错误人数：' + tooltipItem.formattedValue + '人';
+                                // 添加题目内容
+                                const qid = tooltipItem.label;
+                                const content = questionContentMap[qid] || '无题目内容';
+                                return [label, '题目内容：' + content];
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        title: {
+                            display: true,
+                            text: '题目编号'
+                        }
+                    },
+                    y: {
+                        beginAtZero: true,
+                        title: {
+                            display: true,
+                            text: '错误人数'
+                        },
+                        ticks: {
+                            precision: 0 // 错误人数为整数
+                        }
+                    }
+                }
+            }
+        });
     }
 
     async function loadStudentErrors() {
         const name = document.getElementById('studentSelect').value;
-        const resultArea = document.getElementById('resultArea');
-        if (!name) { resultArea.style.display = 'none'; return; }
-
-        try {
-            const res = await fetch(`${API_BASE_URL}/get_errors/${encodeURIComponent(name)}`);
-            const data = await res.json();
-            
-            document.getElementById('scoreVal').innerText = data.total_score + " 分";
-            const wrongIdsDiv = document.getElementById('wrongIds');
-            wrongIdsDiv.innerHTML = '';
-            resultArea.style.display = 'block';
-
-            if (data.wrong_questions.length > 0) {
-                data.wrong_questions.forEach(qId => {
-                    const span = document.createElement('span');
-                    span.className = 'badge bg-danger badge-custom';
-                    span.innerText = "题号 " + qId;
-                    wrongIdsDiv.appendChild(span);
-                });
-            } else {
-                wrongIdsDiv.innerHTML = '<span class="text-success">全对，没有错题！</span>';
-            }
-        } catch (error) { alert("加载失败"); }
+        if (!name) { 
+            document.getElementById('resultArea').style.display = 'none'; 
+            document.getElementById('scoreVal').innerText = '-- / --';
+            return; 
+        }
+        const res = await fetch(`${API_BASE_URL}/get_errors/${encodeURIComponent(name)}`);
+        const data = await res.json();
+        document.getElementById('scoreVal').innerText = `${data.total_score} / ${data.paper_total}`;
+        const container = document.getElementById('wrongIds');
+        container.innerHTML = '';
+        if (data.wrong_questions.length > 0) {
+            data.wrong_questions.forEach(q => {
+                const s = document.createElement('span');
+                s.className = 'badge bg-danger m-1 p-2 shadow-sm';
+                s.innerText = q;
+                container.appendChild(s);
+            });
+        } else {
+            container.innerHTML = '<div class="text-success small fw-bold">满分，太棒了！</div>';
+        }
+        document.getElementById('resultArea').style.display = 'block';
     }
 
     function downloadExcel() {
         const name = document.getElementById('studentSelect').value;
         window.location.href = `${API_BASE_URL}/download_error_book/${encodeURIComponent(name)}`;
+    }
+
+    function downloadAllScores() {
+        window.location.href = `${API_BASE_URL}/download_all_scores`;
     }
 </script>
 </body>
