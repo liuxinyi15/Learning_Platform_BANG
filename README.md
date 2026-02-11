@@ -1,16 +1,19 @@
-💥 BANG (Building Adaptive Next-Generation Growth Platform)
-📖 Introduction (项目介绍)
+# 🧩 BANG (Building Adaptive Next-Generation Growth Platform)
+
+## 📖 Introduction (项目介绍)
 BANG is an all-in-one teaching workbench designed to empower language educators.
 
-What does BANG stand for?
+- What does BANG stand for?
 
-English: Building Adaptive Next-Generation Growth Platform.
+  English: Building Adaptive Next-Generation Growth Platform.
 
-Chinese: The pronunciation echoes "帮" (Help) and "棒" (Excellence).
+  Chinese: The pronunciation echoes "帮" (Help) and "棒" (Excellence).
 
-This dual meaning symbolizes our core mission: to support ("帮") learners and teachers, helping them achieve excellent ("棒") outcomes through adaptive technology and data-driven insights.
+  This dual meaning symbolizes our core mission: to support ("帮") learners and teachers, helping them achieve excellent ("棒") outcomes through adaptive technology and data-driven insights.
 
-✨ Modules & Features (核心模块)
+---
+
+## ✨ Modules & Features (核心模块)
 BANG consists of 6 core modules, each distinguished by a unique theme color to represent different aspects of the teaching workflow:
 
 1. 📚 Material Library (Amber)
@@ -54,29 +57,34 @@ Multi-Level Dashboard: Switch between Grade Overview, Class Trends, and Student 
 Visual Data: Integrated ECharts for trend lines, radar charts (ability models), and ranking bars.
 
 Historical Tracking: Compare performance across multiple exams to identify growth patterns.
+---
 
-🛠️ Tech Stack (技术栈)
+## 🛠️ Tech Stack (技术栈)
 Backend: Python 3, Flask, Pandas, SQLite
 
 Frontend: HTML5, Tailwind CSS, Vue.js 3, ECharts, SheetJS
 
 Authentication: Flask-Login
+---
 
-🚀 Quick Start (快速开始)
+## 🚀 Quick Start (快速开始)
 1. Clone the Repository
-Bash
+```Bash
 git clone https://github.com/your-username/bang-platform.git
 cd bang-platform
+```
 2. Set Up Virtual Environment
-Bash
+```Bash
 python -m venv venv
 # Windows
 venv\Scripts\activate
 # macOS/Linux
 source venv/bin/activate
+```
 3. Install Dependencies
-Bash
+```Bash
 pip install -r requirements.txt
+```
 4. Run the Platform
 The database (platform.db) and necessary folders will be initialized automatically on the first run.
 
@@ -86,13 +94,14 @@ python app.py
 Open your browser and visit: http://127.0.0.1:5000
 
 Default Admin Credentials:
-
+```Bash
 Username: admin
 
 Password: admin123
-
-📂 Project Structure (项目结构)
-Plaintext
+```
+---
+## 📂 Project Structure (项目结构)
+```Bash
 BANG-Platform/
 ├── app.py                  # Main Application Entry & Routes
 ├── services/               # Business Logic
@@ -108,7 +117,10 @@ BANG-Platform/
 ├── performance_data/       # CSV Data for Analysis
 ├── platform.db             # SQLite Database
 └── README.md
-📢 Acknowledgements & License (致谢与许可)
+```
+---
+
+## 📢 Acknowledgements & License (致谢与许可)
 Project License
 This project is licensed under the MIT License.
 
@@ -117,8 +129,9 @@ The Audio Studio module (including audio_service.py and the underlying text-to-s
 
 Source: EN-CH-word-transform-to-mp3
 
-Author: liuxinyi15
+Author: Xinyi_LIU (@liuxinyi15)
 
 We gratefully acknowledge the contribution of this repository in enabling the high-quality English-Chinese audio transformation features within BANG. The usage of the audio module follows the licensing terms specified in the original repository.
+---
 
 BANG - Helping Learners Grow. 🚀
