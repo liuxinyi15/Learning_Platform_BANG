@@ -1,6 +1,6 @@
-# 🧩 BANG (Building Adaptive Next-Generation Growth Platform)
+# 🧩 BANG - Building Adaptive Next-Generation Growth Platform
 
-## 📖 Introduction (项目介绍)
+## 📖 Introduction 
 BANG is an all-in-one teaching workbench designed to empower language educators.
 
 - What does BANG stand for?
@@ -13,58 +13,58 @@ BANG is an all-in-one teaching workbench designed to empower language educators.
 
 ---
 
-## ✨ Modules & Features (核心模块)
+## ✨ Modules & Features
 BANG consists of 6 core modules, each distinguished by a unique theme color to represent different aspects of the teaching workflow:
 
-1. 📚 Material Library (Amber)
-Resource Management: Batch upload and manage teaching materials (PDFs, Docs, Audio).
+1. 📚 Material Library 
+  Resource Management: Batch upload and manage teaching materials (PDFs, Docs, Audio).
 
-Visual Indexing: Auto-generated cover previews and category filtering.
+  Visual Indexing: Auto-generated cover previews and category filtering.
 
-Smart Sorting: Organize resources by official/personal uploads or timeline.
+  Smart Sorting: Organize resources by official/personal uploads or timeline.
 
-2. 📅 Lesson Planner (Teal)
-Kanban Board: Drag-and-drop task management for daily lesson planning.
+2. 📅 Lesson Planner 
+  Kanban Board: Drag-and-drop task management for daily lesson planning.
 
-Progress Tracking: Mark tasks with priority levels (High/Medium/Low) and completion status.
+  Progress Tracking: Mark tasks with priority levels (High/Medium/Low) and completion status.
 
-Export: One-click export of lesson plans to CSV.
+  Export: One-click export of lesson plans to CSV.
 
-3. 🔤 Vocab Master (Lime)
-Dual Mode: Switch between Table View for editing and Flashcard View for review.
+3. 🔤 Vocab Master 
+  Dual Mode: Switch between Table View for editing and Flashcard View for review.
 
-Custom Columns: Dynamically add new fields (e.g., Synonyms, Notes) to your word lists.
+  Custom Columns: Dynamically add new fields (e.g., Synonyms, Notes) to your word lists.
 
-Interactive Learning: 3D flip animations for effective vocabulary memorization.
+  Interactive Learning: 3D flip animations for effective vocabulary memorization.
 
-4. 🎧 Audio Studio (Emerald)
-Batch Synthesis: Convert Excel word lists into high-quality MP3 audio files.
+4. 🎧 Audio Studio
+  Batch Synthesis: Convert Excel word lists into high-quality MP3 audio files.
 
-Customization: Adjust speech rate, voice type (Male/Female), and repetition count.
+  Customization: Adjust speech rate, voice type (Male/Female), and repetition count.
 
-Powered By: Specialized TTS logic for language learning scenarios.
+  Powered By: Specialized TTS logic for language learning scenarios.
 
-5. 📝 Smart Grading (Cyan)
-Auto-Correction: Upload student answer sheets and question banks for instant grading.
+5. 📝 Smart Grading 
+  Auto-Correction: Upload student answer sheets and question banks for instant grading.
 
-Fuzzy Matching: Intelligent recognition of question IDs (e.g., matching "Q1" with "QQ1").
+  Fuzzy Matching: Intelligent recognition of question IDs (e.g., matching "Q1" with "QQ1").
 
-Error Analysis: Automatic generation of error distribution charts and personal error books.
+  Error Analysis: Automatic generation of error distribution charts and personal error books.
 
-6. 📊 Performance Analysis (Indigo)
-Multi-Level Dashboard: Switch between Grade Overview, Class Trends, and Student Tracker.
+6. 📊 Performance Analysis 
+  Multi-Level Dashboard: Switch between Grade Overview, Class Trends, and Student Tracker.
 
-Visual Data: Integrated ECharts for trend lines, radar charts (ability models), and ranking bars.
+  Visual Data: Integrated ECharts for trend lines, radar charts (ability models), and ranking bars.
 
-Historical Tracking: Compare performance across multiple exams to identify growth patterns.
+  Historical Tracking: Compare performance across multiple exams to identify growth patterns.
 ---
 
 ## 🛠️ Tech Stack (技术栈)
-Backend: Python 3, Flask, Pandas, SQLite
+- Backend: Python 3, Flask, Pandas, SQLite
 
-Frontend: HTML5, Tailwind CSS, Vue.js 3, ECharts, SheetJS
+- Frontend: HTML5, Tailwind CSS, Vue.js 3, ECharts, SheetJS
 
-Authentication: Flask-Login
+- Authentication: Flask-Login
 ---
 
 ## 🚀 Quick Start (快速开始)
@@ -86,14 +86,15 @@ source venv/bin/activate
 pip install -r requirements.txt
 ```
 4. Run the Platform
-The database (platform.db) and necessary folders will be initialized automatically on the first run.
+  The database (platform.db) and necessary folders will be initialized automatically on the first run.
 
-Bash
+```Bash
 python app.py
+```
 5. Access
-Open your browser and visit: http://127.0.0.1:5000
+  Open your browser and visit: http://127.0.0.1:5000
 
-Default Admin Credentials:
+  Default Admin Credentials:
 ```Bash
 Username: admin
 
@@ -121,17 +122,16 @@ BANG-Platform/
 ---
 
 ## 📢 Acknowledgements & License (致谢与许可)
-Project License
+**Project License**
 This project is licensed under the MIT License.
 
 Special Credits: Audio Module
 The Audio Studio module (including audio_service.py and the underlying text-to-speech logic) is derived from and powered by the open-source project:
 
-Source: EN-CH-word-transform-to-mp3
+**Source**: EN-CH-word-transform-to-mp3
 
-Author: Xinyi_LIU (@liuxinyi15)
+**Author**: Xinyi_LIU (@liuxinyi15)
 
-We gratefully acknowledge the contribution of this repository in enabling the high-quality English-Chinese audio transformation features within BANG. The usage of the audio module follows the licensing terms specified in the original repository.
 ---
 
-BANG - Helping Learners Grow. 🚀
+## BANG - Helping Learners Grow. 🚀
