@@ -1,0 +1,307 @@
+{% extends "base.html" %}
+
+{% block title %}备课管理{% endblock %}
+
+{% block content %}
+{% raw %}
+<div id="app" v-cloak class="max-w-[1200px] mx-auto p-6">
+    
+    <header class="flex flex-col md:flex-row md:justify-between md:items-center mb-8 gap-6 bg-white/60 p-6 rounded-2xl backdrop-blur-sm border border-white/50 shadow-sm">
+        <div class="flex items-center gap-4">
+            <div class="bg-indigo-100 p-3 rounded-xl text-2xl">📅</div>
+            <div>
+                <h1 class="text-3xl font-black tracking-tight text-indigo-900 leading-none">TEACHER PLANNER</h1>
+                <p class="text-slate-500 font-medium mt-1 text-sm">备课任务与进度管理系统</p>
+            </div>
+        </div>
+        <div class="flex gap-3">
+            <button @click="exportToCSV" class="bg-white text-indigo-600 border border-indigo-100 px-4 py-2 rounded-xl hover:bg-indigo-50 font-bold transition text-sm flex items-center gap-2 shadow-sm">
+                📥 导出 CSV
+            </button>
+            <button @click="createNewBoard" class="bg-indigo-600 text-white px-5 py-2.5 rounded-xl hover:bg-indigo-700 font-bold transition shadow-md hover:shadow-lg text-sm flex items-center gap-2">
+                <span>+</span> 新建任务板
+            </button>
+        </div>
+    </header>
+
+    <nav class="flex gap-2 mb-6 overflow-x-auto pb-2">
+        <div v-for="(board, index) in boards" :key="board.id" class="relative group flex items-center">
+            <input v-if="editingBoardIdx === index" v-model="board.name" @blur="editingBoardIdx = null" @keyup.enter="editingBoardIdx = null" class="px-6 py-3 rounded-xl shadow-inner outline-none font-bold text-indigo-600 bg-white min-w-[120px]" auto-focus>
+            <button v-else @click="activeBoardIndex = index" @dblclick="editingBoardIdx = index" 
+                :class="activeBoardIndex === index ? 'bg-white text-indigo-600 shadow-md transform -translate-y-1' : 'bg-white/40 text-slate-500 hover:bg-white/70'" 
+                class="px-6 py-3 font-bold transition-all rounded-xl text-sm whitespace-nowrap border border-transparent">
+                {{ board.name }}
+            </button>
+            <button v-if="boards.length > 1" @click="deleteBoard(index)" class="absolute -top-2 -right-1 bg-white rounded-full w-5 h-5 flex items-center justify-center shadow-sm text-xs text-slate-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition">×</button>
+        </div>
+    </nav>
+
+    <div v-if="currentBoard" class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+        <div class="lg:col-span-3 space-y-6">
+            <div class="bg-white p-6 rounded-2xl shadow-lg shadow-indigo-900/5 border border-slate-100">
+                <h3 class="font-bold text-slate-400 uppercase text-[10px] tracking-widest mb-4 flex items-center gap-2">
+                    <span>✏️</span> Add Task
+                </h3>
+                <div class="space-y-4">
+                    <div v-for="header in currentBoard.headers" :key="header">
+                        <label class="block text-[11px] font-bold text-slate-500 mb-1.5 uppercase ml-1">{{ header }}</label>
+                        <select v-if="isPriorityField(header)" v-model="newTaskData[header]" 
+                                class="w-full border border-slate-200 p-3 rounded-xl text-sm bg-slate-50 focus:ring-2 focus:ring-indigo-400 outline-none transition appearance-none">
+                            <option value="High">🔴 High Priority</option>
+                            <option value="Medium">🟡 Medium</option>
+                            <option value="Low">🔵 Low</option>
+                        </select>
+                        <input v-else v-model="newTaskData[header]" :placeholder="'Enter ' + header" 
+                               class="w-full border border-slate-200 p-3 rounded-xl outline-none text-sm bg-slate-50 focus:ring-2 focus:ring-indigo-400 transition">
+                    </div>
+                    <button @click="addTask" class="w-full bg-slate-800 text-white py-3 rounded-xl font-bold hover:bg-black transition text-sm shadow-lg hover:shadow-xl transform active:scale-95 duration-200">
+                        添加任务
+                    </button>
+                </div>
+            </div>
+
+            <div class="bg-white/80 p-6 rounded-2xl shadow-sm border border-white/60">
+                <h3 class="font-bold text-slate-400 uppercase text-[10px] tracking-widest mb-4">Data Import</h3>
+                <label class="block w-full border-2 border-dashed border-slate-300 p-6 rounded-xl text-center cursor-pointer hover:border-indigo-400 hover:bg-indigo-50 transition group">
+                    <div class="text-2xl mb-2 group-hover:scale-110 transition">📂</div>
+                    <span class="text-xs text-indigo-600 font-bold block">点击上传 CSV</span>
+                    <input type="file" @change="handleFileUpload" accept=".csv" class="hidden">
+                </label>
+            </div>
+        </div>
+
+        <div class="lg:col-span-9 space-y-8">
+            <section>
+                 <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-5 gap-4">
+                    <div class="flex items-center gap-3">
+                        <h2 class="text-xl font-bold text-slate-700">进行中任务</h2>
+                        <span class="bg-indigo-100 text-indigo-600 px-2 py-1 rounded-md text-xs font-bold">{{ activeTasks.length }}</span>
+                    </div>
+                    
+                    <div class="flex items-center gap-3">
+                        <div class="flex items-center gap-2 bg-white px-3 py-1.5 rounded-lg border border-slate-200 shadow-sm text-sm">
+                            <span class="text-[10px] font-bold text-slate-400 uppercase">排序:</span>
+                            <select v-model="currentBoard.sortBy" class="font-bold text-indigo-600 bg-transparent outline-none cursor-pointer text-xs">
+                                <option v-for="h in currentBoard.headers" :key="h" :value="h">{{ h }}</option>
+                            </select>
+                            <button @click="currentBoard.sortOrder = (currentBoard.sortOrder === 'desc' ? 'asc' : 'desc')" class="text-indigo-600 hover:bg-indigo-50 p-1 rounded transition">
+                                <span v-if="currentBoard.sortOrder === 'desc'">⬇</span><span v-else>⬆</span>
+                            </button>
+                        </div>
+                        <div v-show="selectedActiveIds.length > 0" class="flex gap-2">
+                            <button @click="batchArchive" class="text-xs bg-emerald-100 text-emerald-700 px-3 py-1.5 rounded-lg font-bold hover:bg-emerald-200 transition">完成选中</button>
+                            <button @click="batchDelete('active')" class="text-xs bg-red-100 text-red-700 px-3 py-1.5 rounded-lg font-bold hover:bg-red-200 transition">删除选中</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-2xl shadow-lg shadow-slate-200/50 border border-slate-100 overflow-hidden">
+                    <table class="w-full text-left border-collapse">
+                        <thead class="bg-slate-50 border-b border-slate-100 text-slate-400 text-[11px] uppercase font-bold tracking-wider">
+                            <tr>
+                                <th class="p-4 w-12 text-center"><input type="checkbox" v-model="allActiveSelected" @change="toggleSelect('active')" class="w-4 h-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"></th>
+                                <th v-for="header in currentBoard.headers" :key="header" class="p-4 whitespace-nowrap">{{ header }}</th>
+                                <th class="p-4 text-center w-24">操作</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-50">
+                            <tr v-for="task in activeTasks" :key="task.id" class="hover:bg-indigo-50/30 transition group">
+                                <td class="p-4 text-center"><input type="checkbox" :value="task.id" v-model="selectedActiveIds" class="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"></td>
+                                <td v-for="header in currentBoard.headers" :key="header" class="p-4 text-sm max-w-[200px] break-words">
+                                    <div v-if="isPriorityField(header)">
+                                        <span :class="getBadgeClass(task.data[header])" class="px-2.5 py-1 rounded-md text-[11px] font-bold border" contenteditable="true" @blur="updateCellValue(task, header, $event)">{{ task.data[header] }}</span>
+                                    </div>
+                                    <div v-else class="outline-none p-1" contenteditable="true" @blur="updateCellValue(task, header, $event)">{{ task.data[header] }}</div>
+                                </td>
+                                <td class="p-4 text-center">
+                                    <div class="flex justify-center gap-2 opacity-100 md:opacity-0 group-hover:opacity-100 transition">
+                                        <button @click="archiveSingle(task.id)" class="text-emerald-500 hover:text-emerald-700 bg-emerald-50 p-1.5 rounded-md">✔</button>
+                                        <button @click="deletePermanent(task.id)" class="text-red-400 hover:text-red-600 p-1.5">🗑</button>
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+            
+            <div class="text-center pt-8 pb-4">
+                <button @click="resetEverything" class="text-[10px] text-slate-300 hover:text-red-400 uppercase tracking-widest transition">清空所有本地缓存</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endraw %}
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // 这里粘贴你之前 planner.html 的 Vue 代码，
+    // 内容完全保持不变，只需要粘贴 script 标签里的内容即可
+    const { createApp, ref, computed, watch, onMounted } = Vue;
+    const STORAGE_KEY = 'SYNC_PRO_WORKSPACE_V8_FIXED';
+    // ... (包含 parseCSVLine 和 createApp 的所有逻辑) ...
+    // 为了节省篇幅，这里请把之前 planner.html 里的 JS 完整复制过来
+    // 记得要包含 parseCSVLine, isPriorityField 等所有函数
+    
+    // ⚠️ 注意：如果你不复制 JS，页面会没有反应！
+    // 请确保把之前 planner.html 底部 <script> 标签内的所有内容复制到这里
+    const parseCSVLine = (text) => {
+        const result = [];
+        let cell = '';
+        let inQuotes = false;
+        for (let i = 0; i < text.length; i++) {
+            let char = text[i];
+            if (char === '"') inQuotes = !inQuotes;
+            else if (char === ',' && !inQuotes) { result.push(cell.trim()); cell = ''; }
+            else cell += char;
+        }
+        result.push(cell.trim());
+        return result.map(v => v.replace(/^"|"$/g, ''));
+    };
+
+    createApp({
+        setup() {
+            const defaultHeaders = ['Task Name', 'Priority', 'Notes'];
+            const boards = ref([{ 
+                id: 1, name: '备课计划 Alpha', headers: [...defaultHeaders], tasks: [], sortBy: 'Priority', sortOrder: 'desc'
+            }]);
+            const activeBoardIndex = ref(0);
+            const editingBoardIdx = ref(null);
+            const newTaskData = ref({});
+            const selectedActiveIds = ref([]);
+            const selectedArchivedIds = ref([]);
+            const allActiveSelected = ref(false);
+
+            const currentBoard = computed(() => boards.value[activeBoardIndex.value]);
+
+            const activeTasks = computed(() => {
+                if (!currentBoard.value) return [];
+                const list = currentBoard.value.tasks.filter(t => !t.archived);
+                const key = currentBoard.value.sortBy;
+                const order = currentBoard.value.sortOrder === 'desc' ? -1 : 1;
+                return list.sort((a, b) => {
+                    let valA = a.data[key] || '';
+                    let valB = b.data[key] || '';
+                    const numA = parseFloat(valA);
+                    const numB = parseFloat(valB);
+                    if (!isNaN(numA) && !isNaN(numB)) return (numA - numB) * order;
+                    return valA.toString().localeCompare(valB.toString()) * order;
+                });
+            });
+
+            const archivedTasks = computed(() => {
+                if (!currentBoard.value) return [];
+                return currentBoard.value.tasks.filter(t => t.archived).sort((a,b) => b.id - a.id);
+            });
+            
+            const isPriorityField = (h) => {
+                const n = String(h).toLowerCase();
+                return n.includes('priority') || n.includes('urgency') || n.includes('effort') || n.includes('status') || n.includes('重要性');
+            };
+
+            const initForm = () => {
+                const data = {};
+                currentBoard.value?.headers.forEach(h => {
+                    data[h] = isPriorityField(h) ? 'Medium' : '';
+                });
+                newTaskData.value = data;
+            };
+
+            onMounted(() => {
+                const saved = localStorage.getItem(STORAGE_KEY);
+                if (saved) {
+                    const parsed = JSON.parse(saved);
+                    parsed.forEach(b => {
+                        if (!b.sortBy) b.sortBy = b.headers[0];
+                        if (!b.sortOrder) b.sortOrder = 'desc';
+                    });
+                    boards.value = parsed;
+                }
+                initForm();
+            });
+
+            watch(boards, (v) => localStorage.setItem(STORAGE_KEY, JSON.stringify(v)), { deep: true });
+            watch(activeBoardIndex, () => { initForm(); selectedActiveIds.value = []; });
+
+            const handleFileUpload = (event) => {
+                const file = event.target.files[0];
+                if (!file) return;
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const lines = e.target.result.split(/\r?\n/).filter(l => l.trim());
+                    if (lines.length === 0) return;
+                    const headers = parseCSVLine(lines[0]);
+                    currentBoard.value.headers = headers;
+                    currentBoard.value.sortBy = headers.find(h => isPriorityField(h)) || headers[0];
+                    currentBoard.value.tasks = lines.slice(1).map((line, i) => {
+                        const values = parseCSVLine(line);
+                        let data = {};
+                        headers.forEach((h, idx) => data[h] = values[idx] || "");
+                        return { id: Date.now() + i, data, archived: false };
+                    });
+                    initForm();
+                    event.target.value = '';
+                };
+                reader.readAsText(file);
+            };
+
+            const exportToCSV = () => {
+                if (!currentBoard.value || currentBoard.value.tasks.length === 0) return;
+                const h = currentBoard.value.headers;
+                const content = [h.join(','), ...currentBoard.value.tasks.map(t => h.map(key => `"${(t.data[key] || '').toString().replace(/"/g, '""')}"`).join(','))].join('\n');
+                const link = document.createElement("a");
+                link.href = URL.createObjectURL(new Blob([content], { type: 'text/csv;charset=utf-8;' }));
+                link.download = `${currentBoard.value.name}_Tasks.csv`;
+                link.click();
+            };
+
+            const addTask = () => {
+                const first = currentBoard.value.headers[0];
+                if(!newTaskData.value[first]) return alert(`Field "${first}" is required`);
+                currentBoard.value.tasks.push({ id: Date.now(), data: {...newTaskData.value}, archived: false });
+                initForm();
+            };
+
+            const updateCellValue = (task, header, e) => { task.data[header] = e.target.innerText.trim(); };
+            
+            const createNewBoard = () => {
+                const name = prompt("Board Name:");
+                if(name) { 
+                    boards.value.push({ id: Date.now(), name, headers: [...defaultHeaders], tasks: [], sortBy: 'Priority', sortOrder: 'desc' }); 
+                    activeBoardIndex.value = boards.value.length - 1; 
+                }
+            };
+
+            const archiveSingle = (id) => { const t = currentBoard.value.tasks.find(x => x.id === id); if(t) t.archived = true; };
+            const restoreSingle = (id) => { const t = currentBoard.value.tasks.find(x => x.id === id); if(t) t.archived = false; };
+            const deletePermanent = (id) => { if(confirm("Permanently delete?")) currentBoard.value.tasks = currentBoard.value.tasks.filter(t => t.id !== id); };
+            const toggleSelect = (type) => { if(type === 'active') selectedActiveIds.value = allActiveSelected.value ? activeTasks.value.map(t => t.id) : []; };
+            const batchArchive = () => { selectedActiveIds.value.forEach(id => archiveSingle(id)); selectedActiveIds.value = []; allActiveSelected.value = false; };
+            const batchDelete = (type) => {
+                const list = type === 'active' ? selectedActiveIds : selectedArchivedIds;
+                if(confirm(`Delete ${list.value.length} items?`)) {
+                    currentBoard.value.tasks = currentBoard.value.tasks.filter(x => !list.value.includes(x.id));
+                    list.value = [];
+                    if(type === 'active') allActiveSelected.value = false;
+                }
+            };
+            const resetEverything = () => { if(confirm("Clear all data?")) { localStorage.removeItem(STORAGE_KEY); location.reload(); }};
+            const getBadgeClass = (v) => {
+                const s = String(v).toLowerCase();
+                if(s.includes('3') || s.includes('high') || s.includes('urgent')) return 'bg-red-50 text-red-600 border border-red-200';
+                if(s.includes('2') || s.includes('medium')) return 'bg-orange-50 text-orange-600 border border-orange-200';
+                return 'bg-blue-50 text-blue-600 border border-blue-200';
+            };
+
+            return { 
+                boards, activeBoardIndex, editingBoardIdx, currentBoard, newTaskData, activeTasks, archivedTasks, 
+                selectedActiveIds, selectedArchivedIds, allActiveSelected, addTask, createNewBoard, 
+                deleteBoard: (idx) => { if(confirm("Delete this board?")) boards.value.splice(idx,1) }, 
+                archiveSingle, restoreSingle, deletePermanent, toggleSelect, batchArchive, batchDelete, 
+                handleFileUpload, exportToCSV, updateCellValue, getBadgeClass, isPriorityField, resetEverything 
+            };
+        }
+    }).mount('#app');
+</script>
+{% endblock %}

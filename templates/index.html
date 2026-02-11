@@ -1,44 +1,35 @@
-<!DOCTYPE html>
-<html lang="zh">
-<head>
-    <meta charset="UTF-8">
-    <title>BANG 学习平台</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <style>
-        .hero-section { background: #f8f9fa; padding: 100px 0; text-align: center; }
-        .feature-card { transition: 0.3s; cursor: pointer; }
-        .feature-card:hover { transform: translateY(-10px); box-shadow: 0 10px 20px rgba(0,0,0,0.1); }
-    </style>
-</head>
-<body>
-    <div class="hero-section">
-        <h1>欢迎使用 BANG 学习平台</h1>
-        <p class="lead">集成素材管理与 AI 语音生成的全方位工具</p>
-    </div>
+{% extends "base.html" %}
 
-    <div class="container mt-5">
-        <div class="row g-4">
-            <div class="col-md-6">
-                <div class="card h-100 feature-card" onclick="location.href='/library'">
-                    <div class="card-body text-center">
-                        <h2 class="display-4"><i class="bi bi-folder"></i></h2>
-                        <h3 class="card-title">素材库</h3>
-                        <p class="card-text">管理本地 Excel, PDF, PPT 素材，支持用户上传。</p>
-                        <a href="/library" class="btn btn-primary">进入素材库</a>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-6">
-                <div class="card h-100 feature-card" onclick="location.href='/audio'">
-                    <div class="card-body text-center">
-                        <h2 class="display-4"><i class="bi bi-mic"></i></h2>
-                        <h3 class="card-title">音频生成</h3>
-                        <p class="card-text">连接本地 API，将文字转换为中英双语朗读音频。</p>
-                        <a href="/audio" class="btn btn-success">开始制作音频</a>
-                    </div>
-                </div>
-            </div>
-        </div>
+{% block title %}首页 - 语言教学平台{% endblock %}
+
+{% block content %}
+<div class="min-h-[80vh] flex flex-col items-center justify-center p-4">
+    <h1 class="text-4xl font-black text-slate-800 mb-10 drop-shadow-sm">🚀 欢迎回来，老师</h1>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl w-full">
+        <a href="/library" class="group bg-white p-8 rounded-3xl shadow-lg hover:shadow-2xl hover:-translate-y-2 transition duration-300 flex flex-col items-center text-center text-slate-700 no-underline">
+            <div class="text-6xl mb-4 group-hover:scale-110 transition">📚</div>
+            <div class="text-xl font-bold mb-2">素材资料库</div>
+            <div class="text-sm text-slate-400">管理课件、文档与多语言资源</div>
+        </a>
+
+        <a href="/planner" class="group bg-white p-8 rounded-3xl shadow-lg hover:shadow-2xl hover:-translate-y-2 transition duration-300 flex flex-col items-center text-center text-slate-700 no-underline">
+            <div class="text-6xl mb-4 group-hover:scale-110 transition">📅</div>
+            <div class="text-xl font-bold mb-2">备课事项管理</div>
+            <div class="text-sm text-slate-400">追踪教学进度与重点备课任务</div>
+        </a>
+
+        <a href="/vocabulary" class="group bg-white p-8 rounded-3xl shadow-lg hover:shadow-2xl hover:-translate-y-2 transition duration-300 flex flex-col items-center text-center text-slate-700 no-underline">
+            <div class="text-6xl mb-4 group-hover:scale-110 transition">🔤</div>
+            <div class="text-xl font-bold mb-2">词汇特训营</div>
+            <div class="text-sm text-slate-400">词汇表管理、闪卡与音频生成</div>
+        </a>
+
+        <a href="/audio" class="group bg-white p-8 rounded-3xl shadow-lg hover:shadow-2xl hover:-translate-y-2 transition duration-300 flex flex-col items-center text-center text-slate-700 no-underline">
+            <div class="text-6xl mb-4 group-hover:scale-110 transition">🎧</div>
+            <div class="text-xl font-bold mb-2">音频工具箱</div>
+            <div class="text-sm text-slate-400">批量上传 Excel 制作听力音频</div>
+        </a>
     </div>
-</body>
-</html>
+</div>
+{% endblock %}
