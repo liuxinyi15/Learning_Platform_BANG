@@ -548,15 +548,107 @@ def logout(): logout_user(); return redirect(url_for('login'))
 @login_required
 def index(): return render_template("index.html", user=current_user)
 
-@app.route("/library", methods=["GET","POST"])
+@app.route("/library", methods=["GET", "POST"])
 @login_required
 def library():
-    if request.method=="POST":
+    success = None
+    error = None
+    
+    # 1. 处理上传逻辑 (保持不变)
+    if request.method == "POST":
         files = request.files.getlist("material_file")
-        if files and files[0].filename:
-            for f in files: save_user_upload_with_db(f, request.files.get("cover_file"), request.form.get("category_select") or "General", LIBRARY_PATH, 'System' if current_user.is_admin else 'User')
-    return render_template("library.html", official_materials=get_materials('System'), user_materials=get_materials('User'), categories=get_all_categories(), active_tab=request.args.get('tab','official'), sort_option=request.args.get('sort','newest'))
+        cover = request.files.get("cover_file")
+        select_mode = request.form.get("category_mode")
+        selected_cat = request.form.get("category_select")
+        new_cat = request.form.get("category_new")
+        final_category = new_cat if (select_mode == "new" and new_cat) else (selected_cat or "General")
 
+        if not files or files[0].filename == "":
+            error = "No file selected."
+        else:
+            uploader_type = 'System' if current_user.is_admin else 'User'
+            success_count = 0
+            for file in files:
+                if file and file.filename:
+                    file.stream.seek(0)
+                    if cover: cover.stream.seek(0)
+                    if save_user_upload_with_db(file, cover, final_category, LIBRARY_PATH, uploader=uploader_type):
+                        success_count += 1
+            if success_count > 0: success = f"Successfully uploaded {success_count} files!"
+            else: error = "Upload failed."
+
+    # 2. 获取数据 & 🔥 核心修复：将 SQLite Row 转为字典 (Dict)
+    sort_option = request.args.get('sort', 'newest')
+    active_tab = request.args.get('tab', 'official')
+    
+    # 获取原始数据
+    raw_official = get_materials(uploader_type='System', sort_by=sort_option)
+    raw_user = get_materials(uploader_type='User', sort_by=sort_option)
+    
+    # 🔥 强制转换为字典列表，否则前端 Vue 无法解析 (tojson 会报错)
+    official_materials = [dict(row) for row in raw_official]
+    user_materials = [dict(row) for row in raw_user]
+    
+    categories = get_all_categories()
+    
+    return render_template("library.html", 
+                         official_materials=official_materials, 
+                         user_materials=user_materials, 
+                         categories=categories, 
+                         active_tab=active_tab, 
+                         sort_option=sort_option, 
+                         success=success, 
+                         error=error)
+
+# ===========================
+# 📚 Library 下载功能 (修复版)
+# ===========================
+# ===========================
+# 📚 Library 下载功能 (修复版)
+# ===========================
+@app.route("/library/download/<int:material_id>")
+@login_required
+def download_material(material_id):
+    try:
+        # 1. 获取所有素材并查找目标 ID
+        # 传入 None 表示获取所有类型(Official/User)
+        rows = get_materials(None)
+        
+        # 转换为字典并查找
+        target = next((dict(m) for m in rows if m['id'] == material_id), None)
+        
+        if target is None:
+            return "错误：数据库中找不到该文件记录", 404
+            
+        # 2. 获取并修复文件路径
+        file_path = target["file_path"]
+        
+        # 🔥 关键修复：确保路径是绝对路径
+        # 如果数据库存的是相对路径，我们需要把它拼接到项目的根目录下
+        if not os.path.isabs(file_path):
+            base_dir = os.path.abspath(os.path.dirname(__file__))
+            file_path = os.path.join(base_dir, file_path)
+        
+        # 3. 检查服务器上文件是否真的存在
+        if not os.path.exists(file_path):
+            return f"错误：服务器物理文件丢失 (路径: {file_path})", 404
+
+        # 4. 获取文件名并处理
+        filename = os.path.basename(file_path)
+        
+        # 5. 发送文件
+        # 使用 send_file 是最稳妥的方式，它可以自动处理大部分流媒体和下载头
+        return send_file(
+            file_path,
+            as_attachment=True,
+            download_name=filename,
+            conditional=True  # 支持断点续传，防止大文件下载中断
+        )
+        
+    except Exception as e:
+        logging.error(f"Library Download Error: {e}")
+        return f"下载服务出错: {str(e)}", 500
+        
 @app.route("/planner")
 @login_required
 def planner(): return render_template("planner.html")
