@@ -36,7 +36,10 @@
 
         <div class="flex gap-3 flex-shrink-0">
             <button @click="exportToCSV" class="bg-white text-teal-700 border border-teal-200 px-4 py-2.5 rounded-xl hover:bg-teal-50 font-bold transition shadow-sm text-sm flex items-center gap-2">
-                📥 Export CSV
+                📥 CSV
+            </button>
+            <button @click="exportToExcel" class="bg-emerald-50 text-emerald-700 border border-emerald-200 px-4 py-2.5 rounded-xl hover:bg-emerald-100 font-bold transition shadow-sm text-sm flex items-center gap-2">
+                📊 Excel
             </button>
             <button @click="createNewBoard" class="bg-teal-600 text-white px-5 py-2.5 rounded-xl hover:bg-teal-700 font-bold transition shadow-lg shadow-teal-100 text-sm flex items-center gap-2">
                 <span>+</span> New Board
@@ -71,8 +74,8 @@
                 <label class="cursor-pointer block">
                     <div class="text-3xl mb-2 group-hover:scale-110 transition">📂</div>
                     <span class="text-xs text-teal-700 font-bold block mb-1">Import Data</span>
-                    <p class="text-[10px] text-teal-400">Supports CSV format</p>
-                    <input type="file" @change="handleFileUpload" accept=".csv" class="hidden">
+                    <p class="text-[10px] text-teal-400">Supports CSV & Excel</p>
+                    <input type="file" @change="handleFileUpload" accept=".csv, .xlsx, .xls" class="hidden">
                 </label>
             </div>
         </div>
@@ -129,25 +132,130 @@
     </div>
 </div>
 {% endraw %}
+
+<script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+
 <script>
     const { createApp, ref, computed, watch, onMounted } = Vue;
     const STORAGE_KEY = 'SYNC_PRO_WORKSPACE_V8_FIXED';
-    const parseCSVLine = (text) => { const result = []; let cell = ''; let inQuotes = false; for (let i = 0; i < text.length; i++) { let char = text[i]; if (char === '"') inQuotes = !inQuotes; else if (char === ',' && !inQuotes) { result.push(cell.trim()); cell = ''; } else cell += char; } result.push(cell.trim()); return result.map(v => v.replace(/^"|"$/g, '')); };
+    
+    // 解析 CSV 行（处理逗号和引号）
+    const parseCSVLine = (text) => { 
+        const result = []; let cell = ''; let inQuotes = false; 
+        for (let i = 0; i < text.length; i++) { 
+            let char = text[i]; 
+            if (char === '"') inQuotes = !inQuotes; 
+            else if (char === ',' && !inQuotes) { result.push(cell.trim()); cell = ''; } 
+            else cell += char; 
+        } 
+        result.push(cell.trim()); 
+        return result.map(v => v.replace(/^"|"$/g, '')); 
+    };
+    
     createApp({
         setup() {
             const defaultHeaders = ['Task Name', 'Priority', 'Notes'];
             const boards = ref([{ id: 1, name: 'Lesson Plan Alpha', headers: [...defaultHeaders], tasks: [], sortBy: 'Priority', sortOrder: 'desc' }]);
             const activeBoardIndex = ref(0); const editingBoardIdx = ref(null); const newTaskData = ref({});
-            const selectedActiveIds = ref([]); const selectedArchivedIds = ref([]); const allActiveSelected = ref(false);
+            const selectedActiveIds = ref([]); const allActiveSelected = ref(false);
             const currentBoard = computed(() => boards.value[activeBoardIndex.value]);
-            const activeTasks = computed(() => { if (!currentBoard.value) return []; const list = currentBoard.value.tasks.filter(t => !t.archived); const key = currentBoard.value.sortBy; const order = currentBoard.value.sortOrder === 'desc' ? -1 : 1; return list.sort((a, b) => { let valA = a.data[key] || ''; let valB = b.data[key] || ''; return valA.toString().localeCompare(valB.toString()) * order; }); });
+            
+            const activeTasks = computed(() => { 
+                if (!currentBoard.value) return []; 
+                const list = currentBoard.value.tasks.filter(t => !t.archived); 
+                const key = currentBoard.value.sortBy; 
+                const order = currentBoard.value.sortOrder === 'desc' ? -1 : 1; 
+                return list.sort((a, b) => { 
+                    let valA = a.data[key] || ''; let valB = b.data[key] || ''; 
+                    return valA.toString().localeCompare(valB.toString()) * order; 
+                }); 
+            });
+            
             const isPriorityField = (h) => { const n = String(h).toLowerCase(); return n.includes('priority') || n.includes('urgency') || n.includes('status'); };
             const initForm = () => { const data = {}; currentBoard.value?.headers.forEach(h => { data[h] = isPriorityField(h) ? 'Medium' : ''; }); newTaskData.value = data; };
+            
             onMounted(() => { const saved = localStorage.getItem(STORAGE_KEY); if (saved) boards.value = JSON.parse(saved); initForm(); });
             watch(boards, (v) => localStorage.setItem(STORAGE_KEY, JSON.stringify(v)), { deep: true });
             watch(activeBoardIndex, () => { initForm(); selectedActiveIds.value = []; });
-            const handleFileUpload = (event) => { const file = event.target.files[0]; if (!file) return; const reader = new FileReader(); reader.onload = (e) => { const lines = e.target.result.split(/\r?\n/).filter(l => l.trim()); if (lines.length === 0) return; const headers = parseCSVLine(lines[0]); currentBoard.value.headers = headers; currentBoard.value.tasks = lines.slice(1).map((line, i) => { const values = parseCSVLine(line); let data = {}; headers.forEach((h, idx) => data[h] = values[idx] || ""); return { id: Date.now() + i, data, archived: false }; }); initForm(); event.target.value = ''; }; reader.readAsText(file); };
-            const exportToCSV = () => { if (!currentBoard.value) return; const h = currentBoard.value.headers; const content = [h.join(','), ...currentBoard.value.tasks.map(t => h.map(key => `"${(t.data[key] || '').toString().replace(/"/g, '""')}"`).join(','))].join('\n'); const link = document.createElement("a"); link.href = URL.createObjectURL(new Blob([content], { type: 'text/csv;charset=utf-8;' })); link.download = `${currentBoard.value.name}.csv`; link.click(); };
+            
+            // --- 文件导入功能 (CSV & Excel) ---
+            const handleFileUpload = (event) => {
+                const file = event.target.files[0];
+                if (!file) return;
+
+                const processCSVText = (csvText) => {
+                    const lines = csvText.split(/\r?\n/).filter(l => l.trim());
+                    if (lines.length === 0) return;
+                    const headers = parseCSVLine(lines[0]);
+                    currentBoard.value.headers = headers;
+                    currentBoard.value.tasks = lines.slice(1).map((line, i) => {
+                        const values = parseCSVLine(line);
+                        let data = {};
+                        headers.forEach((h, idx) => data[h] = values[idx] || "");
+                        return { id: Date.now() + i, data, archived: false };
+                    });
+                    initForm();
+                    event.target.value = '';
+                };
+
+                const fileName = file.name.toLowerCase();
+                
+                if (fileName.endsWith('.xlsx') || fileName.endsWith('.xls')) {
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        const data = new Uint8Array(e.target.result);
+                        const workbook = XLSX.read(data, { type: 'array' });
+                        const firstSheetName = workbook.SheetNames[0];
+                        const worksheet = workbook.Sheets[firstSheetName];
+                        const csvText = XLSX.utils.sheet_to_csv(worksheet);
+                        processCSVText(csvText);
+                    };
+                    reader.readAsArrayBuffer(file);
+                } 
+                else if (fileName.endsWith('.csv')) {
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        processCSVText(e.target.result);
+                    };
+                    reader.readAsText(file);
+                } 
+            };
+
+            // --- 导出功能 ---
+            const exportToCSV = () => { 
+                if (!currentBoard.value) return; 
+                const h = currentBoard.value.headers; 
+                const content = [h.join(','), ...currentBoard.value.tasks.map(t => h.map(key => `"${(t.data[key] || '').toString().replace(/"/g, '""')}"`).join(','))].join('\n'); 
+                const link = document.createElement("a"); 
+                link.href = URL.createObjectURL(new Blob([content], { type: 'text/csv;charset=utf-8;' })); 
+                link.download = `${currentBoard.value.name}.csv`; 
+                link.click(); 
+            };
+
+            const exportToExcel = () => {
+                if (!currentBoard.value) return;
+                
+                // 1. 准备数据：将任务对象数组转为符合 Excel 的简单数组
+                const headers = currentBoard.value.headers;
+                const rows = currentBoard.value.tasks.map(t => {
+                    let row = {};
+                    headers.forEach(h => {
+                        row[h] = t.data[h] || "";
+                    });
+                    return row;
+                });
+
+                // 2. 创建工作表
+                const worksheet = XLSX.utils.json_to_sheet(rows, { header: headers });
+                
+                // 3. 创建工作簿并添加工作表
+                const workbook = XLSX.utils.book_new();
+                XLSX.utils.book_append_sheet(workbook, worksheet, "Lessons");
+
+                // 4. 导出并下载
+                XLSX.writeFile(workbook, `${currentBoard.value.name}.xlsx`);
+            };
+
             const addTask = () => { currentBoard.value.tasks.push({ id: Date.now(), data: {...newTaskData.value}, archived: false }); initForm(); };
             const updateCellValue = (task, header, e) => { task.data[header] = e.target.innerText.trim(); };
             const createNewBoard = () => { const name = prompt("Board Name:"); if(name) { boards.value.push({ id: Date.now(), name, headers: [...defaultHeaders], tasks: [] }); activeBoardIndex.value = boards.value.length - 1; } };
@@ -158,7 +266,13 @@
             const batchDelete = (type) => { if(confirm("Delete Selected?")) { currentBoard.value.tasks = currentBoard.value.tasks.filter(x => !selectedActiveIds.value.includes(x.id)); selectedActiveIds.value = []; } };
             const resetEverything = () => { if(confirm("Clear ALL data?")) { localStorage.removeItem(STORAGE_KEY); location.reload(); }};
             const getBadgeClass = (v) => { const s = String(v).toLowerCase(); if(s.includes('high')) return 'bg-red-50 text-red-600 border-red-200'; if(s.includes('medium')) return 'bg-orange-50 text-orange-600 border-orange-200'; return 'bg-blue-50 text-blue-600 border-blue-200'; };
-            return { boards, activeBoardIndex, editingBoardIdx, currentBoard, newTaskData, activeTasks, selectedActiveIds, allActiveSelected, addTask, createNewBoard, deleteBoard: (idx) => { if(confirm("Delete?")) boards.value.splice(idx,1) }, archiveSingle, deletePermanent, toggleSelect, batchArchive, batchDelete, handleFileUpload, exportToCSV, updateCellValue, getBadgeClass, isPriorityField, resetEverything };
+            
+            return { 
+                boards, activeBoardIndex, editingBoardIdx, currentBoard, newTaskData, activeTasks, selectedActiveIds, allActiveSelected, 
+                addTask, createNewBoard, deleteBoard: (idx) => { if(confirm("Delete?")) boards.value.splice(idx,1) }, 
+                archiveSingle, deletePermanent, toggleSelect, batchArchive, batchDelete, handleFileUpload, 
+                exportToCSV, exportToExcel, updateCellValue, getBadgeClass, isPriorityField, resetEverything 
+            };
         }
     }).mount('#app');
 </script>
