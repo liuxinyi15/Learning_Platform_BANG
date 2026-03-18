@@ -151,4 +151,4 @@ Author: Xinyi_LIU (@liuxinyi15)
 
 ---
 
-## BANG - Helping Learners Grow. 🚀
+## BANG - Make Language Education Great Again. 🚀
