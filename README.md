@@ -103,11 +103,17 @@ python app.py
 5. Access
   Open your browser and visit: http://127.0.0.1:5000
 
-  Default Admin Credentials:
+  Before first use, set a strong session secret:
 ```Bash
-Username: admin
+# Windows PowerShell
+$env:BANG_SECRET_KEY = "replace-with-a-long-random-secret"
+```
 
-Password: admin123
+  Optional: bootstrap the first admin account from environment variables:
+```Bash
+# Windows PowerShell
+$env:BANG_INIT_ADMIN_USERNAME = "admin"
+$env:BANG_INIT_ADMIN_PASSWORD = "replace-with-a-strong-password"
 ```
 ---
 ## 📂 Project Structure

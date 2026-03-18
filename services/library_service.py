@@ -4,11 +4,20 @@ from datetime import datetime
 from werkzeug.utils import secure_filename
 from werkzeug.security import generate_password_hash, check_password_hash
 
+
+DB_PATH = 'platform.db'
+
+
+def get_db_connection():
+    conn = sqlite3.connect(DB_PATH)
+    conn.row_factory = sqlite3.Row
+    return conn
+
 # ===========================
 # 1. Database Initialization
 # ===========================
 def init_db():
-    conn = sqlite3.connect('platform.db')
+    conn = get_db_connection()
     cursor = conn.cursor()
     
     cursor.execute('''
@@ -19,7 +28,8 @@ def init_db():
             file_path TEXT NOT NULL,
             cover_path TEXT,
             upload_time DATETIME,
-            uploader TEXT
+            uploader TEXT,
+            user_id INTEGER
         )
     ''')
     
@@ -32,16 +42,23 @@ def init_db():
         )
     ''')
     
-    # Create Default Admin
-    try:
-        cursor.execute("SELECT id FROM users WHERE username = 'admin'")
+    cursor.execute("PRAGMA table_info(materials)")
+    material_columns = {row["name"] for row in cursor.fetchall()}
+    if "user_id" not in material_columns:
+        cursor.execute("ALTER TABLE materials ADD COLUMN user_id INTEGER")
+
+    init_admin_username = os.environ.get("BANG_INIT_ADMIN_USERNAME", "").strip()
+    init_admin_password = os.environ.get("BANG_INIT_ADMIN_PASSWORD", "").strip()
+
+    if init_admin_username and init_admin_password:
+        cursor.execute("SELECT id FROM users WHERE username = ?", (init_admin_username,))
         if not cursor.fetchone():
-            p_hash = generate_password_hash("admin123")
-            cursor.execute("INSERT INTO users (username, password_hash, is_admin) VALUES (?, ?, ?)", 
-                           ('admin', p_hash, 1))
-            print(">>> Default Admin Created: admin / admin123")
-    except Exception as e:
-        print("Admin check error:", e)
+            p_hash = generate_password_hash(init_admin_password)
+            cursor.execute(
+                "INSERT INTO users (username, password_hash, is_admin) VALUES (?, ?, ?)",
+                (init_admin_username, p_hash, 1)
+            )
+            print(f">>> Initial admin created from environment: {init_admin_username}")
 
     conn.commit()
     conn.close()
@@ -51,7 +68,9 @@ def init_db():
 # ===========================
 
 def create_user(username, password, is_admin=0):
-    conn = sqlite3.connect('platform.db')
+    if not username or not password or len(password) < 8:
+        return False
+    conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
     try:
         p_hash = generate_password_hash(password)
@@ -65,7 +84,7 @@ def create_user(username, password, is_admin=0):
         conn.close()
 
 def verify_user(username, password):
-    conn = sqlite3.connect('platform.db')
+    conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
     cursor.execute('SELECT id, password_hash, is_admin FROM users WHERE username = ?', (username,))
     row = cursor.fetchone()
@@ -78,7 +97,7 @@ def verify_user(username, password):
     return None
 
 def get_user_by_id(user_id):
-    conn = sqlite3.connect('platform.db')
+    conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
     cursor.execute('SELECT id, username, is_admin FROM users WHERE id = ?', (user_id,))
     row = cursor.fetchone()
@@ -86,8 +105,7 @@ def get_user_by_id(user_id):
     return row
 
 def get_all_users():
-    conn = sqlite3.connect('platform.db')
-    conn.row_factory = sqlite3.Row
+    conn = get_db_connection()
     cursor = conn.cursor()
     cursor.execute('SELECT * FROM users ORDER BY id DESC')
     rows = cursor.fetchall()
@@ -95,7 +113,7 @@ def get_all_users():
     return rows
 
 def delete_user_by_id(user_id):
-    conn = sqlite3.connect('platform.db')
+    conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
     if user_id == 1:
         return False
@@ -105,7 +123,7 @@ def delete_user_by_id(user_id):
     return True
 
 def update_user_role(user_id, is_admin):
-    conn = sqlite3.connect('platform.db')
+    conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
     if user_id == 1: 
         return False
@@ -115,7 +133,9 @@ def update_user_role(user_id, is_admin):
     return True
 
 def admin_reset_password(user_id, new_password):
-    conn = sqlite3.connect('platform.db')
+    if not new_password or len(new_password) < 8:
+        return False
+    conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
     p_hash = generate_password_hash(new_password)
     cursor.execute('UPDATE users SET password_hash = ? WHERE id = ?', (p_hash, user_id))
@@ -127,7 +147,7 @@ def admin_reset_password(user_id, new_password):
 # 3. Material Management
 # ===========================
 def get_all_categories():
-    conn = sqlite3.connect('platform.db')
+    conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
     try:
         cursor.execute('SELECT DISTINCT category FROM materials')
@@ -140,15 +160,24 @@ def get_all_categories():
         if d not in categories: categories.append(d)
     return categories
 
-def get_materials(uploader_type=None, sort_by='newest'):
-    conn = sqlite3.connect('platform.db')
-    conn.row_factory = sqlite3.Row
+def get_materials(uploader_type=None, sort_by='newest', user_id=None, include_all=False):
+    conn = get_db_connection()
     cursor = conn.cursor()
     sql = "SELECT * FROM materials"
+    clauses = []
     params = []
     if uploader_type:
-        sql += " WHERE uploader = ?"
+        clauses.append("uploader = ?")
         params.append(uploader_type)
+    if user_id is not None and not include_all:
+        if uploader_type == 'User':
+            clauses.append("user_id = ?")
+            params.append(user_id)
+        elif uploader_type is None:
+            clauses.append("(uploader = 'System' OR (uploader = 'User' AND user_id = ?))")
+            params.append(user_id)
+    if clauses:
+        sql += " WHERE " + " AND ".join(clauses)
     if sort_by == 'newest': sql += " ORDER BY upload_time DESC"
     elif sort_by == 'oldest': sql += " ORDER BY upload_time ASC"
     elif sort_by == 'a-z': sql += " ORDER BY filename ASC"
@@ -159,8 +188,7 @@ def get_materials(uploader_type=None, sort_by='newest'):
     return rows
 
 def delete_material_by_id(material_id):
-    conn = sqlite3.connect('platform.db')
-    conn.row_factory = sqlite3.Row
+    conn = get_db_connection()
     cursor = conn.cursor()
     cursor.execute("SELECT * FROM materials WHERE id = ?", (material_id,))
     row = cursor.fetchone()
@@ -178,17 +206,17 @@ def delete_material_by_id(material_id):
     conn.close()
     return False
 
-def add_file_to_db(filename, category, file_path, cover_path=None, uploader='System'):
-    conn = sqlite3.connect('platform.db')
+def add_file_to_db(filename, category, file_path, cover_path=None, uploader='System', user_id=None):
+    conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
     cursor.execute('''
-        INSERT INTO materials (filename, category, file_path, cover_path, upload_time, uploader)
-        VALUES (?, ?, ?, ?, ?, ?)
-    ''', (filename, category, file_path, cover_path, datetime.now(), uploader))
+        INSERT INTO materials (filename, category, file_path, cover_path, upload_time, uploader, user_id)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
+    ''', (filename, category, file_path, cover_path, datetime.now(), uploader, user_id))
     conn.commit()
     conn.close()
 
-def save_user_upload_with_db(file, cover_file, category_input, base_path, uploader='User'):
+def save_user_upload_with_db(file, cover_file, category_input, base_path, uploader='User', user_id=None):
     ALLOWED_EXTENSIONS = {'pdf', 'docx', 'xlsx', 'pptx', 'txt'}
     ALLOWED_IMG = {'png', 'jpg', 'jpeg', 'gif'}
     if not file or '.' not in file.filename: return False
@@ -196,8 +224,15 @@ def save_user_upload_with_db(file, cover_file, category_input, base_path, upload
     if ext not in ALLOWED_EXTENSIONS: return False
     target_dir = os.path.join(base_path, "User_Uploads")
     if not os.path.exists(target_dir): os.makedirs(target_dir)
-    filename = secure_filename(file.filename)
+    original_name = secure_filename(file.filename)
+    stem, suffix = os.path.splitext(original_name)
+    filename = original_name
     full_path = os.path.join(target_dir, filename)
+    counter = 1
+    while os.path.exists(full_path):
+        filename = f"{stem}_{counter}{suffix}"
+        full_path = os.path.join(target_dir, filename)
+        counter += 1
     file.save(full_path)
     final_cover_path = None
     if cover_file and cover_file.filename != '':
@@ -205,7 +240,12 @@ def save_user_upload_with_db(file, cover_file, category_input, base_path, upload
         if img_ext in ALLOWED_IMG:
             cover_filename = f"cover_{os.path.splitext(filename)[0]}.{img_ext}"
             cover_full_path = os.path.join(target_dir, cover_filename)
+            cover_counter = 1
+            while os.path.exists(cover_full_path):
+                cover_filename = f"cover_{os.path.splitext(filename)[0]}_{cover_counter}.{img_ext}"
+                cover_full_path = os.path.join(target_dir, cover_filename)
+                cover_counter += 1
             cover_file.save(cover_full_path)
             final_cover_path = cover_full_path
-    add_file_to_db(filename, category_input, full_path, final_cover_path, uploader=uploader)
+    add_file_to_db(filename, category_input, full_path, final_cover_path, uploader=uploader, user_id=user_id)
     return True

@@ -73,9 +73,45 @@
                 <select id="classSelect" onchange="changeClass()" class="w-full mb-3 px-3 py-2 border border-slate-200 rounded-xl text-sm font-bold text-indigo-900 outline-none focus:ring-2 focus:ring-indigo-900">
                     <option value="">Loading...</option>
                 </select>
-                <button onclick="createNewClass()" class="w-full text-xs border border-indigo-200 text-indigo-700 py-2 rounded-lg hover:bg-indigo-50 transition">
-                    + Create New Class
-                </button>
+                <div class="flex gap-2">
+                    <button onclick="openCreateClassModal()" class="flex-1 text-xs border border-indigo-200 text-indigo-700 py-2 rounded-lg hover:bg-indigo-50 font-bold transition">
+                        + New Class
+                    </button>
+                    <button onclick="deleteCurrentClass()" class="flex-1 text-xs border border-red-200 text-red-600 py-2 rounded-lg hover:bg-red-50 font-bold transition">
+                        🗑️ Delete
+                    </button>
+                </div>
+            </div>
+
+            <div id="createClassModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+                <div class="bg-white rounded-3xl p-8 max-w-md w-full shadow-2xl border border-slate-100">
+                    <div class="flex justify-between items-center mb-6">
+                        <h3 class="text-xl font-black text-slate-800 flex items-center gap-2">
+                            <span class="bg-indigo-100 text-indigo-900 w-8 h-8 rounded-full flex items-center justify-center text-sm">🏫</span>
+                            New Class
+                        </h3>
+                        <button onclick="closeCreateClassModal()" class="text-slate-400 hover:text-slate-600 text-2xl transition-colors">&times;</button>
+                    </div>
+                    
+                    <div class="space-y-5">
+                        <div>
+                            <label class="block text-xs font-bold text-slate-500 uppercase mb-2">Class Name <span class="text-red-500">*</span></label>
+                            <input type="text" id="newClassName" placeholder="e.g., Grade 10 - Class A" 
+                                   class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none focus:ring-2 focus:ring-indigo-900 transition">
+                        </div>
+                        
+                        <div>
+                            <label class="block text-xs font-bold text-slate-500 uppercase mb-2">Student Roster (Optional)</label>
+                            <textarea id="newClassStudents" rows="4" placeholder="Paste student names here...&#10;Alice&#10;Bob&#10;Charlie" 
+                                      class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none focus:ring-2 focus:ring-indigo-900 transition resize-none"></textarea>
+                            <p class="text-[10px] text-slate-400 mt-2 font-medium">Names can be separated by commas or new lines. Pre-registered students will appear in charts even if they miss exams.</p>
+                        </div>
+
+                        <button onclick="submitNewClass()" class="w-full btn-indigo py-3 rounded-xl font-bold text-sm shadow-md transition flex items-center justify-center gap-2 mt-2">
+                            <span>💾</span> Create & Save
+                        </button>
+                    </div>
+                </div>
             </div>
 
             <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200">
@@ -215,34 +251,70 @@
     }
     
     // --- Class Management ---
+ // --- Modal Controls ---
+    function openCreateClassModal() { document.getElementById('createClassModal').classList.remove('hidden'); }
+    function closeCreateClassModal() { document.getElementById('createClassModal').classList.add('hidden'); }
+
+    // --- Class Management ---
     async function loadClasses() {
         const res = await fetch('/api/performance/classes');
         const data = await res.json();
         const select = document.getElementById('classSelect');
         select.innerHTML = '';
         if (data.classes.length > 0) {
-            data.classes.forEach(c => {
-                select.add(new Option(c, c));
-            });
-            currentClass = data.classes[0];
+            data.classes.forEach(c => select.add(new Option(c, c)));
+            // 如果原本有选中的班级，保持选中；否则选第一个
+            if (!currentClass || !data.classes.includes(currentClass)) {
+                currentClass = data.classes[0];
+            }
+            select.value = currentClass;
             refreshList();
         } else {
             select.add(new Option("No classes", ""));
             document.getElementById('examCheckboxes').innerHTML = '<span class="text-xs text-slate-400 p-2">Create a class to start.</span>';
+            currentClass = "";
+            trendChart.clear();
         }
     }
 
-    async function createNewClass() {
-        const name = prompt("Enter Class Name (e.g., Class 1):");
-        if (name) {
-            await fetch('/api/performance/classes', {
-                method: 'POST', headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({class_name: name})
-            });
-            loadClasses();
+    async function submitNewClass() {
+        const name = document.getElementById('newClassName').value.trim();
+        const studentsRaw = document.getElementById('newClassStudents').value;
+        if (!name) return alert("Please enter a class name!");
+        
+        let students = [];
+        if (studentsRaw) {
+            // 支持回车、逗号分隔批量录入
+            students = studentsRaw.split(/[\n,]+/).map(s => s.trim()).filter(s => s);
+        }
+
+        const res = await fetch('/api/performance/classes', {
+            method: 'POST', headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({class_name: name, students: students})
+        });
+        const data = await res.json();
+        
+        if (data.success) {
+            closeCreateClassModal();
+            document.getElementById('newClassName').value = '';
+            document.getElementById('newClassStudents').value = '';
+            currentClass = name; 
+            await loadClasses();
+            await loadGradeExams(); 
+        } else {
+            alert(data.error);
         }
     }
 
+    async function deleteCurrentClass() {
+        if (!currentClass) return;
+        if (confirm(`⚠️ Warning! Are you sure you want to delete the ENTIRE class "${currentClass}" and ALL its exam history? This action cannot be undone.`)) {
+            await fetch(`/api/performance/classes/${encodeURIComponent(currentClass)}`, { method: 'DELETE' });
+            currentClass = "";
+            await loadClasses();
+            await loadGradeExams();
+        }
+    }
     function changeClass() {
         currentClass = document.getElementById('classSelect').value;
         refreshList();

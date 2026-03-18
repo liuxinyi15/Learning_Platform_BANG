@@ -1,11 +1,11 @@
-from flask import Flask, render_template, request, send_from_directory, redirect, url_for, Response, jsonify, flash, abort, send_file
+from flask import Flask, render_template, request, redirect, url_for, Response, jsonify, flash, abort, send_file, session
 import os
 import pandas as pd
 import requests
-import json
 import io
 import logging
 import glob
+import secrets
 from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
 from functools import wraps
 
@@ -24,43 +24,114 @@ from services.library_service import (
     update_user_role,
     admin_reset_password
 )
-from services.audio_service import AudioServiceClient
-
 app = Flask(__name__)
-app.secret_key = 'super_secret_key_change_this'
+app.secret_key = os.environ.get("BANG_SECRET_KEY") or secrets.token_hex(32)
+app.config.update(
+    SESSION_COOKIE_HTTPONLY=True,
+    SESSION_COOKIE_SAMESITE="Lax",
+)
+login_manager = LoginManager()
+login_manager.init_app(app)
+login_manager.login_view = 'login'
 
-# ===========================
-# 📊 Performance Analysis Logic
-# ===========================
-# 定义成绩数据存储目录
-PERFORMANCE_DIR = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'performance_data')
-if not os.path.exists(PERFORMANCE_DIR):
-    os.makedirs(PERFORMANCE_DIR)
+BASE_DIR = os.path.abspath(os.path.dirname(__file__))
+LIBRARY_PATH = os.path.join(BASE_DIR, "library")
+PERFORMANCE_DIR = os.path.join(BASE_DIR, 'performance_data')
+os.makedirs(LIBRARY_PATH, exist_ok=True)
+os.makedirs(PERFORMANCE_DIR, exist_ok=True)
 
-def get_class_file_path(class_name):
-    """Helper: Get CSV path for a specific class"""
+correction_storage = {
+    "error_records": {},
+    "question_bank": None,
+    "paper_total_score": 0,
+    "col_map": {},
+    "all_questions_info": [],
+    "question_error_counts": {}
+}
+
+class User(UserMixin):
+    def __init__(self, id, username, is_admin=0):
+        self.id = id
+        self.username = username
+        self.is_admin = bool(is_admin)
+
+@login_manager.user_loader
+def load_user(user_id):
+    row = get_user_by_id(user_id)
+    return User(row[0], row[1], row[2]) if row else None
+
+def admin_required(f):
+    @wraps(f)
+    @login_required
+    def decorated_function(*args, **kwargs):
+        if not getattr(current_user, 'is_admin', False):
+            flash("Permission Denied: Admins only.", "error")
+            return redirect(url_for('index'))
+        return f(*args, **kwargs)
+    return decorated_function
+
+
+def clean_ans(val):
+    if pd.isna(val):
+        return ""
+    s = str(val).strip()
+    if s.endswith('.0'):
+        s = s[:-2]
+    return s.upper()
+
+
+def get_csrf_token():
+    token = session.get("_csrf_token")
+    if not token:
+        token = secrets.token_urlsafe(32)
+        session["_csrf_token"] = token
+    return token
+
+
+@app.before_request
+def csrf_protect():
+    if request.method in {"POST", "PUT", "PATCH", "DELETE"}:
+        session_token = session.get("_csrf_token")
+        request_token = request.headers.get("X-CSRF-Token") or request.form.get("csrf_token")
+        if not session_token or not request_token or not secrets.compare_digest(session_token, request_token):
+            abort(403)
+
+
+@app.context_processor
+def inject_template_globals():
+    return {"csrf_token": get_csrf_token()}
+
+
+init_db()
+# ===========================
+# 📊 Performance Analysis Logic (Enhanced & User-Isolated)
+# ===========================
+def get_class_file_path(user_id, class_name):
+    """根据 User ID 隔离不同账号的班级数据"""
+    user_dir = os.path.join(PERFORMANCE_DIR, f"user_{user_id}")
+    if not os.path.exists(user_dir):
+        os.makedirs(user_dir)
     safe_name = "".join([c for c in class_name if c.isalpha() or c.isdigit() or c==' ']).strip()
-    return os.path.join(PERFORMANCE_DIR, f"{safe_name}.csv")
+    return os.path.join(user_dir, f"{safe_name}.csv")
 
 def generate_unified_performance_response(history_df, selected_exams):
-    """Core Engine: Generate comparison data for multiple exams"""
+    """Core Engine: 生成可视化对比数据"""
     if history_df.empty: return {'error': 'No data'}
     
-    # Filter selected exams
-    df_selected = history_df[history_df['Exam'].isin(selected_exams)]
-    if df_selected.empty: return {'error': 'Selected exams not found'}
+    # 🔥 获取该班级所有登记过的学生（包括初始名单的，防止缺考没名字）
+    students = history_df['Name'].dropna().unique().tolist()
+    
+    # 过滤选中的考试，并且排除掉初始化的占位符 __ROSTER__
+    df_selected = history_df[history_df['Exam'].isin(selected_exams) & (history_df['Exam'] != '__ROSTER__')]
+    if df_selected.empty: return {'error': 'Selected exams not found or empty'}
     
     exclude_cols = ['Name', 'Exam', 'Total']
     all_subjects = [c for c in history_df.columns if c not in exclude_cols]
-    # Filter columns that actually exist and have non-zero values
     valid_subjects = [sub for sub in all_subjects if sub in df_selected.columns and (pd.to_numeric(df_selected[sub], errors='coerce').fillna(0) != 0).any()]
 
-    students = df_selected['Name'].unique().tolist()
-    
-    # Calc max scores
     max_scores = {}
     for sub in valid_subjects:
-        try: max_scores[sub] = float(history_df[sub].max())
+        try: max_scores[sub] = float(pd.to_numeric(history_df[sub], errors='coerce').max())
         except: max_scores[sub] = 100
 
     bar_series = []
@@ -68,14 +139,14 @@ def generate_unified_performance_response(history_df, selected_exams):
     student_details = {stu: {} for stu in students}
     class_averages = {}
 
-    # Sort students by total score of the last exam
+    # 按最后一场考试排序
     if selected_exams:
         last_exam = selected_exams[-1]
         df_last = df_selected[df_selected['Exam'] == last_exam]
         sorting_totals = []
         for stu in students:
             row = df_last[df_last['Name'] == stu]
-            sorting_totals.append(sum(float(row.iloc[0][sub]) for sub in valid_subjects) if not row.empty else 0)
+            sorting_totals.append(sum(float(row.iloc[0][sub]) for sub in valid_subjects if sub in row.columns) if not row.empty else 0)
         sorted_pairs = sorted(zip(students, sorting_totals), key=lambda x: x[1], reverse=True)
         students = [p[0] for p in sorted_pairs]
 
@@ -83,7 +154,14 @@ def generate_unified_performance_response(history_df, selected_exams):
         df_exam = df_selected[df_selected['Exam'] == exam]
         if df_exam.empty: continue
 
-        avgs = [round(float(df_exam[sub].mean()), 2) if not df_exam[sub].empty else 0 for sub in valid_subjects]
+        avgs = []
+        for sub in valid_subjects:
+            if sub in df_exam.columns:
+                val = pd.to_numeric(df_exam[sub], errors='coerce').mean()
+                avgs.append(round(float(val), 2) if pd.notna(val) else 0)
+            else:
+                avgs.append(0)
+                
         class_averages[exam] = avgs
         radar_series.append({'value': avgs, 'name': f"{exam} Avg"})
 
@@ -111,54 +189,6 @@ def generate_unified_performance_response(history_df, selected_exams):
     }
 
 # ===========================
-# 📦 Smart Grading Storage
-# ===========================
-correction_storage = {
-    "error_records": {}, "question_bank": None, "paper_total_score": 0, 
-    "col_map": {}, "all_questions_info": [], "question_error_counts": {}
-}
-def clean_ans(val):
-    if pd.isna(val): return ""
-    s = str(val).strip()
-    if s.endswith('.0'): s = s[:-2]
-    return s.upper()
-
-# ===========================
-# 🔐 Flask-Login Configuration
-# ===========================
-login_manager = LoginManager()
-login_manager.init_app(app)
-login_manager.login_view = 'login'
-
-class User(UserMixin):
-    def __init__(self, id, username, is_admin=0):
-        self.id = id; self.username = username; self.is_admin = bool(is_admin)
-
-@login_manager.user_loader
-def load_user(user_id):
-    row = get_user_by_id(user_id)
-    return User(row[0], row[1], row[2]) if row else None
-
-def admin_required(f):
-    @wraps(f)
-    @login_required
-    def decorated_function(*args, **kwargs):
-        if not current_user.is_admin:
-            flash("Permission Denied: Admins only.", "error")
-            return redirect(url_for('index'))
-        return f(*args, **kwargs)
-    return decorated_function
-
-# ===========================
-# Init (已修复缺失变量)
-# ===========================
-BASE_DIR = os.path.abspath(os.path.dirname(__file__))
-LIBRARY_PATH = os.path.join(BASE_DIR, "library")  # 🔥 补回了这一行
-
-init_db()
-if not os.path.exists(LIBRARY_PATH): os.makedirs(LIBRARY_PATH)
-
-# ===========================
 # 📊 Performance Routes
 # ===========================
 @app.route("/performance")
@@ -170,7 +200,10 @@ def performance_page():
 @app.route('/api/performance/classes', methods=['GET'])
 @login_required
 def get_classes():
-    files = glob.glob(os.path.join(PERFORMANCE_DIR, "*.csv"))
+    user_dir = os.path.join(PERFORMANCE_DIR, f"user_{current_user.id}")
+    if not os.path.exists(user_dir):
+        return jsonify({'classes': []})
+    files = glob.glob(os.path.join(user_dir, "*.csv"))
     classes = [os.path.basename(f).replace('.csv', '') for f in files]
     classes.sort()
     return jsonify({'classes': classes})
@@ -178,13 +211,31 @@ def get_classes():
 @app.route('/api/performance/classes', methods=['POST'])
 @login_required
 def create_class():
-    class_name = request.json.get('class_name', '').strip()
+    data = request.json
+    class_name = data.get('class_name', '').strip()
+    students = data.get('students', [])
     if not class_name: return jsonify({'error': 'Invalid name'})
-    path = get_class_file_path(class_name)
+    
+    path = get_class_file_path(current_user.id, class_name)
     if os.path.exists(path): return jsonify({'error': 'Class already exists'})
-    # Create empty DF with header
-    pd.DataFrame(columns=['Name', 'Exam']).to_csv(path, index=False)
+    
+    # 如果创建时提供了名单，存入一个隐藏的 __ROSTER__ 标记
+    if students:
+        df = pd.DataFrame({'Name': students})
+        df['Exam'] = '__ROSTER__'
+        df.to_csv(path, index=False)
+    else:
+        pd.DataFrame(columns=['Name', 'Exam']).to_csv(path, index=False)
     return jsonify({'success': True})
+
+@app.route('/api/performance/classes/<class_name>', methods=['DELETE'])
+@login_required
+def delete_class(class_name):
+    path = get_class_file_path(current_user.id, class_name)
+    if os.path.exists(path):
+        os.remove(path)
+        return jsonify({'success': True})
+    return jsonify({'error': 'Class not found'})
 
 # --- Exam Management ---
 @app.route('/api/performance/exams', methods=['GET'])
@@ -193,13 +244,14 @@ def get_performance_exams():
     class_name = request.args.get('class_name')
     if not class_name: return jsonify({'error': 'Class name required'})
     
-    path = get_class_file_path(class_name)
+    path = get_class_file_path(current_user.id, class_name)
     if os.path.exists(path):
         try:
             df = pd.read_csv(path)
             if df.empty or 'Exam' not in df.columns: return jsonify({'success': True, 'exams': []})
             
-            exams = df['Exam'].dropna().unique().tolist()
+            # 过滤掉名单占位符
+            exams = [e for e in df['Exam'].dropna().unique().tolist() if e != '__ROSTER__']
             if not exams: return jsonify({'success': True, 'exams': []})
             
             exclude_cols = ['Name', 'Exam', 'Total']
@@ -208,11 +260,12 @@ def get_performance_exams():
             
             for sub in all_subjects:
                 if pd.to_numeric(df[sub], errors='coerce').notna().any():
-                    avgs = df.groupby('Exam', sort=False)[sub].mean().round(2)
+                    # 计算平均分时排除掉 __ROSTER__
+                    avgs = df[df['Exam'] != '__ROSTER__'].groupby('Exam', sort=False)[sub].apply(lambda x: pd.to_numeric(x, errors='coerce').mean()).round(2)
                     trend_data['averages'][sub] = [avgs.get(e, 0) for e in exams]
                     
             return jsonify({'success': True, 'exams': exams, 'trend_data': trend_data})
-        except Exception: return jsonify({'success': True, 'exams': []})
+        except Exception as e: return jsonify({'success': True, 'exams': [], 'error': str(e)})
     return jsonify({'success': True, 'exams': []})
 
 @app.route('/api/performance/delete', methods=['POST'])
@@ -221,7 +274,7 @@ def delete_performance_exam():
     data = request.json
     class_name = data.get('class_name')
     exam_name = data.get('exam_name')
-    path = get_class_file_path(class_name)
+    path = get_class_file_path(current_user.id, class_name)
     
     if os.path.exists(path):
         df = pd.read_csv(path)
@@ -236,7 +289,7 @@ def compare_performance_exams():
     data = request.json
     class_name = data.get('class_name')
     exam_names = data.get('exam_names', [])
-    path = get_class_file_path(class_name)
+    path = get_class_file_path(current_user.id, class_name)
     
     if not os.path.exists(path): return jsonify({'error': 'Class data not found'})
     return jsonify(generate_unified_performance_response(pd.read_csv(path), exam_names))
@@ -250,7 +303,7 @@ def upload_performance_file():
     class_name = request.form.get('class_name', '').strip()
     
     if not class_name: return jsonify({'error': 'Class not specified'})
-    path = get_class_file_path(class_name)
+    path = get_class_file_path(current_user.id, class_name)
     
     try:
         if file.filename.endswith('.csv'): df = pd.read_csv(file)
@@ -281,13 +334,15 @@ def upload_performance_file():
 @app.route('/api/performance/grade_overview', methods=['GET'])
 @login_required
 def get_grade_overview():
-    files = glob.glob(os.path.join(PERFORMANCE_DIR, "*.csv"))
+    user_dir = os.path.join(PERFORMANCE_DIR, f"user_{current_user.id}")
+    files = glob.glob(os.path.join(user_dir, "*.csv"))
     all_exams = set()
     for f in files:
         try:
             df = pd.read_csv(f)
             if 'Exam' in df.columns:
-                all_exams.update(df['Exam'].dropna().unique())
+                exams = [e for e in df['Exam'].dropna().unique() if e != '__ROSTER__']
+                all_exams.update(exams)
         except: pass
     return jsonify({'exams': sorted(list(all_exams))})
 
@@ -295,10 +350,10 @@ def get_grade_overview():
 @login_required
 def compare_grade_performance():
     exam_name = request.json.get('exam_name')
-    files = glob.glob(os.path.join(PERFORMANCE_DIR, "*.csv"))
+    user_dir = os.path.join(PERFORMANCE_DIR, f"user_{current_user.id}")
+    files = glob.glob(os.path.join(user_dir, "*.csv"))
     
     class_stats = []
-    
     for f in files:
         class_name = os.path.basename(f).replace('.csv', '')
         try:
@@ -310,15 +365,17 @@ def compare_grade_performance():
                 subjects = [c for c in df.columns if c not in exclude]
                 
                 if 'Total' not in df_exam.columns:
-                    df_exam['Total'] = df_exam[subjects].sum(axis=1)
-                
+                    df_exam['Total'] = df_exam[subjects].apply(pd.to_numeric, errors='coerce').sum(axis=1)
+                else:
+                    df_exam['Total'] = pd.to_numeric(df_exam['Total'], errors='coerce').fillna(0)
+                    
                 avg_total = df_exam['Total'].mean()
                 max_total = df_exam['Total'].max()
                 
                 class_stats.append({
                     'class': class_name,
-                    'avg_total': round(avg_total, 2),
-                    'max_total': round(max_total, 2),
+                    'avg_total': round(avg_total, 2) if pd.notna(avg_total) else 0,
+                    'max_total': round(max_total, 2) if pd.notna(max_total) else 0,
                     'student_count': len(df_exam)
                 })
         except: pass
@@ -497,29 +554,29 @@ def admin_dashboard():
     if request.method=="POST":
         u, p, r = request.form.get("new_username"), request.form.get("new_password"), request.form.get("role")
         if create_user(u, p, 1 if r=='admin' else 0): flash("Created!", "success")
-        else: flash("Exists!", "error")
+        else: flash("Create failed. Use a unique username and an 8+ character password.", "error")
         return redirect(url_for('admin_dashboard'))
     return render_template("admin.html", users=get_all_users(), materials=get_materials(None))
 
-@app.route("/admin/promote/<int:uid>")
+@app.route("/admin/promote/<int:uid>", methods=["POST"])
 @admin_required
 def admin_promote(uid): update_user_role(uid,1); return redirect(url_for('admin_dashboard'))
 
-@app.route("/admin/demote/<int:uid>")
+@app.route("/admin/demote/<int:uid>", methods=["POST"])
 @admin_required
 def admin_demote(uid):
     if uid==1 or uid==current_user.id: flash("Cannot demote", "error")
     else: update_user_role(uid,0)
     return redirect(url_for('admin_dashboard'))
 
-@app.route("/admin/delete_user/<int:uid>")
+@app.route("/admin/delete_user/<int:uid>", methods=["POST"])
 @admin_required
 def admin_del_u(uid):
     if uid==1 or uid==current_user.id: flash("Cannot delete", "error")
     else: delete_user_by_id(uid)
     return redirect(url_for('admin_dashboard'))
 
-@app.route("/admin/delete_material/<int:material_id>")
+@app.route("/admin/delete_material/<int:material_id>", methods=["POST"])
 @admin_required
 def admin_delete_material(material_id):
     if delete_material_by_id(material_id): flash("Material permanently deleted.", "success")
@@ -533,14 +590,14 @@ def login():
         act, u, p = request.form.get('action'), request.form.get('username'), request.form.get('password')
         if act=='register':
             if create_user(u,p): flash('Registered!', 'success')
-            else: flash('Username taken', 'error')
+            else: flash('Registration failed. Use a unique username and an 8+ character password.', 'error')
         else:
             data = verify_user(u,p)
             if data: login_user(User(data['id'], u, data['is_admin'])); return redirect(url_for('index'))
             else: flash('Invalid credentials', 'error')
     return render_template("login.html")
 
-@app.route("/logout")
+@app.route("/logout", methods=["POST"])
 @login_required
 def logout(): logout_user(); return redirect(url_for('login'))
 
@@ -572,7 +629,8 @@ def library():
                 if file and file.filename:
                     file.stream.seek(0)
                     if cover: cover.stream.seek(0)
-                    if save_user_upload_with_db(file, cover, final_category, LIBRARY_PATH, uploader=uploader_type):
+                    owner_id = None if current_user.is_admin else current_user.id
+                    if save_user_upload_with_db(file, cover, final_category, LIBRARY_PATH, uploader=uploader_type, user_id=owner_id):
                         success_count += 1
             if success_count > 0: success = f"Successfully uploaded {success_count} files!"
             else: error = "Upload failed."
@@ -583,7 +641,7 @@ def library():
     
     # 获取原始数据
     raw_official = get_materials(uploader_type='System', sort_by=sort_option)
-    raw_user = get_materials(uploader_type='User', sort_by=sort_option)
+    raw_user = get_materials(uploader_type='User', sort_by=sort_option, user_id=current_user.id)
     
     # 🔥 强制转换为字典列表，否则前端 Vue 无法解析 (tojson 会报错)
     official_materials = [dict(row) for row in raw_official]
@@ -612,7 +670,7 @@ def download_material(material_id):
     try:
         # 1. 获取所有素材并查找目标 ID
         # 传入 None 表示获取所有类型(Official/User)
-        rows = get_materials(None)
+        rows = get_materials(None, user_id=current_user.id, include_all=current_user.is_admin)
         
         # 转换为字典并查找
         target = next((dict(m) for m in rows if m['id'] == material_id), None)
@@ -694,7 +752,7 @@ def gen_audio_legacy():
 def change_password():
     if request.method=="POST":
         np, cp = request.form.get("new_password"), request.form.get("confirm_password")
-        if len(np)<6 or np!=cp: flash("Invalid password", "error")
+        if len(np)<8 or np!=cp: flash("Invalid password", "error")
         else: 
             admin_reset_password(current_user.id, np)
             logout_user()
@@ -703,4 +761,4 @@ def change_password():
     return render_template("change_password.html")
 
 if __name__ == "__main__":
-    app.run(debug=True, port=5000)
+    app.run(debug=False, port=5000)

@@ -4,8 +4,8 @@
 <div class="max-w-[1200px] mx-auto p-6">
     <div class="flex justify-between items-center mb-8">
         <div>
-            <h1 class="text-3xl font-black text-slate-800">👑 Admin Console</h1>
-            <p class="text-slate-500 mt-1">Manage Users & Site Content</p>
+            <h1 class="text-3xl font-black text-slate-800">Admin Console</h1>
+            <p class="text-slate-500 mt-1">Manage users and shared content</p>
         </div>
         <div class="bg-indigo-100 text-indigo-700 px-4 py-2 rounded-lg font-bold">Current Admin: {{ current_user.username }}</div>
     </div>
@@ -21,7 +21,7 @@
     <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
         <div class="lg:col-span-4 h-fit">
             <div class="bg-white p-6 rounded-2xl shadow-lg border border-slate-100">
-                <h2 class="text-lg font-bold text-slate-700 mb-4 flex items-center gap-2"><span>➕</span> Quick Create Account</h2>
+                <h2 class="text-lg font-bold text-slate-700 mb-4">Quick Create Account</h2>
                 <form method="POST" action="/admin" class="space-y-4">
                     <div>
                         <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Username</label>
@@ -29,13 +29,13 @@
                     </div>
                     <div>
                         <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Initial Password</label>
-                        <input type="text" name="new_password" required class="w-full p-3 border rounded-xl bg-slate-50 focus:ring-indigo-500 outline-none">
+                        <input type="password" name="new_password" required minlength="8" class="w-full p-3 border rounded-xl bg-slate-50 focus:ring-indigo-500 outline-none">
                     </div>
                     <div>
                         <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Role</label>
                         <select name="role" class="w-full p-3 border rounded-xl bg-slate-50 outline-none">
-                            <option value="user">👤 Normal User</option>
-                            <option value="admin">👑 Administrator</option>
+                            <option value="user">Normal User</option>
+                            <option value="admin">Administrator</option>
                         </select>
                     </div>
                     <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 rounded-xl transition">Create Now</button>
@@ -46,7 +46,7 @@
         <div class="lg:col-span-8 space-y-8">
             <div class="bg-white rounded-2xl shadow-lg border border-slate-100 overflow-hidden">
                 <div class="p-6 border-b border-slate-100 bg-slate-50/50 flex justify-between items-center">
-                    <h2 class="text-xl font-bold text-slate-700">👥 User Management</h2>
+                    <h2 class="text-xl font-bold text-slate-700">User Management</h2>
                     <span class="text-xs bg-slate-200 px-2 py-1 rounded text-slate-600">Total: {{ users|length }}</span>
                 </div>
                 <div class="overflow-x-auto">
@@ -64,14 +64,22 @@
                                 </td>
                                 <td class="p-4">
                                     {% if u.id != 1 and u.id != current_user.id %}
-                                        {% if u.is_admin %}<a href="/admin/demote/{{ u.id }}" class="text-xs bg-white border border-slate-300 px-2 py-1 rounded text-slate-600">⬇ Demote</a>
-                                        {% else %}<a href="/admin/promote/{{ u.id }}" class="text-xs bg-indigo-50 border border-indigo-200 px-2 py-1 rounded text-indigo-700 font-bold">⬆ Promote</a>{% endif %}
+                                        {% if u.is_admin %}
+                                        <form method="POST" action="/admin/demote/{{ u.id }}" class="inline">
+                                            <button type="submit" class="text-xs bg-white border border-slate-300 px-2 py-1 rounded text-slate-600">Demote</button>
+                                        </form>
+                                        {% else %}
+                                        <form method="POST" action="/admin/promote/{{ u.id }}" class="inline">
+                                            <button type="submit" class="text-xs bg-indigo-50 border border-indigo-200 px-2 py-1 rounded text-indigo-700 font-bold">Promote</button>
+                                        </form>
+                                        {% endif %}
                                     {% else %}<span class="text-xs text-slate-300">Unchangeable</span>{% endif %}
                                 </td>
-                                <td class="p-4 text-right flex justify-end gap-2">
-                                    <a href="/admin/reset_pwd/{{ u.id }}" onclick="return confirm('Reset password for {{ u.username }} to 123456?')" class="text-amber-500 font-bold text-xs bg-amber-50 px-2 py-1 rounded border border-amber-100">🔑 Reset</a>
+                                <td class="p-4 text-right">
                                     {% if u.id != 1 and u.id != current_user.id %}
-                                    <a href="/admin/delete_user/{{ u.id }}" onclick="return confirm('Permanently delete {{ u.username }}?')" class="text-red-500 font-bold text-xs bg-red-50 px-2 py-1 rounded border border-red-100">× Delete</a>
+                                    <form method="POST" action="/admin/delete_user/{{ u.id }}" class="inline" onsubmit="return confirm('Permanently delete {{ u.username }}?')">
+                                        <button type="submit" class="text-red-500 font-bold text-xs bg-red-50 px-2 py-1 rounded border border-red-100">Delete</button>
+                                    </form>
                                     {% endif %}
                                 </td>
                             </tr>
@@ -81,7 +89,7 @@
                 </div>
             </div>
             <div class="bg-white rounded-2xl shadow-lg border border-slate-100 overflow-hidden">
-                <div class="p-6 border-b border-slate-100 bg-slate-50/50"><h2 class="text-xl font-bold text-slate-700">📚 Global Content Monitor</h2></div>
+                <div class="p-6 border-b border-slate-100 bg-slate-50/50"><h2 class="text-xl font-bold text-slate-700">Global Content Monitor</h2></div>
                 <div class="overflow-x-auto max-h-[300px] overflow-y-auto">
                     <table class="w-full text-left text-sm">
                         <tbody class="divide-y divide-slate-100">
@@ -90,7 +98,11 @@
                                 <td class="p-4 font-bold text-slate-700 max-w-[200px] truncate">{{ m.filename }}</td>
                                 <td class="p-4"><span class="bg-blue-50 text-blue-600 px-2 py-1 rounded text-xs">{{ m.category }}</span></td>
                                 <td class="p-4 text-xs text-slate-500">{{ m.uploader }}</td>
-                                <td class="p-4 text-right"><a href="/admin/delete_material/{{ m.id }}" onclick="return confirm('Delete?')" class="text-red-500 hover:underline">Delete</a></td>
+                                <td class="p-4 text-right">
+                                    <form method="POST" action="/admin/delete_material/{{ m.id }}" class="inline" onsubmit="return confirm('Delete?')">
+                                        <button type="submit" class="text-red-500 hover:underline">Delete</button>
+                                    </form>
+                                </td>
                             </tr>
                             {% endfor %}
                         </tbody>

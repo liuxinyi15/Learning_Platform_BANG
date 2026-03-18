@@ -36,6 +36,7 @@
         .fade-in-up { animation: fadeInUp 0.5s ease-out forwards; opacity: 0; }
         @keyframes fadeInUp { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
     </style>
+    <meta name="csrf-token" content="{{ csrf_token }}">
     {% block head %}{% endblock %}
 </head>
 <body>
@@ -61,12 +62,43 @@
                     {% if current_user.is_admin %}
                         <a href="/admin" class="nav-item nav-btn-special" style="margin-left: 12px;">👑 Admin</a>
                     {% endif %}
-                    <a href="/logout" class="nav-item text-emerald-200 hover:text-white hover:bg-red-500/20">Logout</a>
+                    <form method="POST" action="/logout" class="inline-flex m-0">
+                        <button type="submit" class="nav-item text-emerald-200 hover:text-white hover:bg-red-500/20 bg-transparent border-0 cursor-pointer">
+                            Logout
+                        </button>
+                    </form>
                 {% endif %}
             </div>
         </div>
     </nav>
     <main>{% block content %}{% endblock %}</main>
+    <script>
+        window.csrfToken = document.querySelector('meta[name="csrf-token"]')?.content || '';
+
+        document.addEventListener('DOMContentLoaded', () => {
+            document.querySelectorAll('form[method="POST"]').forEach((form) => {
+                if (!form.querySelector('input[name="csrf_token"]')) {
+                    const input = document.createElement('input');
+                    input.type = 'hidden';
+                    input.name = 'csrf_token';
+                    input.value = window.csrfToken;
+                    form.appendChild(input);
+                }
+            });
+        });
+
+        const originalFetch = window.fetch.bind(window);
+        window.fetch = (input, init = {}) => {
+            const options = { ...init };
+            const method = (options.method || 'GET').toUpperCase();
+            if (['POST', 'PUT', 'PATCH', 'DELETE'].includes(method)) {
+                const headers = new Headers(options.headers || {});
+                headers.set('X-CSRF-Token', window.csrfToken);
+                options.headers = headers;
+            }
+            return originalFetch(input, options);
+        };
+    </script>
     {% block scripts %}{% endblock %}
 </body>
 </html>
