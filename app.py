@@ -37,6 +37,8 @@ login_manager.login_view = 'login'
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
 LIBRARY_PATH = os.path.join(BASE_DIR, "library")
 PERFORMANCE_DIR = os.path.join(BASE_DIR, 'performance_data')
+CORRECTION_EXAMPLE_DIR = os.path.join(BASE_DIR, "test_sheet", "correction")
+CORRECTION_EXAMPLE_STATIC_DIR = os.path.join(CORRECTION_EXAMPLE_DIR, "static")
 os.makedirs(LIBRARY_PATH, exist_ok=True)
 os.makedirs(PERFORMANCE_DIR, exist_ok=True)
 
@@ -80,6 +82,57 @@ def clean_ans(val):
     return s.upper()
 
 
+def normalize_header(value):
+    return str(value).strip().lower()
+
+
+def pick_best_column(columns, preferred_keywords, fallback_keywords):
+    normalized = [(col, normalize_header(col)) for col in columns]
+    for keyword in preferred_keywords:
+        for col, lowered in normalized:
+            if keyword in lowered:
+                return col
+    for keyword in fallback_keywords:
+        for col, lowered in normalized:
+            if keyword in lowered:
+                return col
+    return None
+
+
+CLASS_ID_SEPARATOR = "__"
+
+
+def sanitize_class_component(value):
+    cleaned = "".join([c for c in str(value).strip() if c.isalpha() or c.isdigit() or c in {' ', '_', '-'}]).strip()
+    return cleaned or "Unnamed"
+
+
+def build_class_id(grade, class_name):
+    safe_grade = sanitize_class_component(grade)
+    safe_class = sanitize_class_component(class_name)
+    if not grade:
+        return safe_class
+    return f"{safe_grade}{CLASS_ID_SEPARATOR}{safe_class}"
+
+
+def parse_class_id(class_id):
+    class_id = str(class_id).strip()
+    if CLASS_ID_SEPARATOR in class_id:
+        grade, class_name = class_id.split(CLASS_ID_SEPARATOR, 1)
+        return {
+            "id": class_id,
+            "grade": grade.strip(),
+            "class_name": class_name.strip(),
+            "display_name": f"{grade.strip()} / {class_name.strip()}"
+        }
+    return {
+        "id": class_id,
+        "grade": "Ungrouped",
+        "class_name": class_id,
+        "display_name": class_id
+    }
+
+
 def get_csrf_token():
     token = session.get("_csrf_token")
     if not token:
@@ -111,7 +164,7 @@ def get_class_file_path(user_id, class_name):
     user_dir = os.path.join(PERFORMANCE_DIR, f"user_{user_id}")
     if not os.path.exists(user_dir):
         os.makedirs(user_dir)
-    safe_name = "".join([c for c in class_name if c.isalpha() or c.isdigit() or c==' ']).strip()
+    safe_name = sanitize_class_component(class_name)
     return os.path.join(user_dir, f"{safe_name}.csv")
 
 def generate_unified_performance_response(history_df, selected_exams):
@@ -204,19 +257,21 @@ def get_classes():
     if not os.path.exists(user_dir):
         return jsonify({'classes': []})
     files = glob.glob(os.path.join(user_dir, "*.csv"))
-    classes = [os.path.basename(f).replace('.csv', '') for f in files]
-    classes.sort()
+    classes = [parse_class_id(os.path.basename(f).replace('.csv', '')) for f in files]
+    classes.sort(key=lambda item: (item['grade'], item['class_name']))
     return jsonify({'classes': classes})
 
 @app.route('/api/performance/classes', methods=['POST'])
 @login_required
 def create_class():
     data = request.json
+    grade = data.get('grade', '').strip()
     class_name = data.get('class_name', '').strip()
     students = data.get('students', [])
     if not class_name: return jsonify({'error': 'Invalid name'})
-    
-    path = get_class_file_path(current_user.id, class_name)
+
+    class_id = build_class_id(grade, class_name)
+    path = get_class_file_path(current_user.id, class_id)
     if os.path.exists(path): return jsonify({'error': 'Class already exists'})
     
     # 如果创建时提供了名单，存入一个隐藏的 __ROSTER__ 标记
@@ -226,7 +281,7 @@ def create_class():
         df.to_csv(path, index=False)
     else:
         pd.DataFrame(columns=['Name', 'Exam']).to_csv(path, index=False)
-    return jsonify({'success': True})
+    return jsonify({'success': True, 'class_id': class_id})
 
 @app.route('/api/performance/classes/<class_name>', methods=['DELETE'])
 @login_required
@@ -350,12 +405,20 @@ def get_grade_overview():
 @login_required
 def compare_grade_performance():
     exam_name = request.json.get('exam_name')
+    selected_grade = request.json.get('grade', '')
+    selected_classes = request.json.get('class_ids', [])
     user_dir = os.path.join(PERFORMANCE_DIR, f"user_{current_user.id}")
     files = glob.glob(os.path.join(user_dir, "*.csv"))
     
     class_stats = []
     for f in files:
-        class_name = os.path.basename(f).replace('.csv', '')
+        class_id = os.path.basename(f).replace('.csv', '')
+        meta = parse_class_id(class_id)
+        if selected_grade and meta['grade'] != selected_grade:
+            continue
+        if selected_classes and class_id not in selected_classes:
+            continue
+        class_name = meta['display_name']
         try:
             df = pd.read_csv(f)
             df_exam = df[df['Exam'] == exam_name]
@@ -373,6 +436,7 @@ def compare_grade_performance():
                 max_total = df_exam['Total'].max()
                 
                 class_stats.append({
+                    'class_id': class_id,
                     'class': class_name,
                     'avg_total': round(avg_total, 2) if pd.notna(avg_total) else 0,
                     'max_total': round(max_total, 2) if pd.notna(max_total) else 0,
@@ -400,6 +464,85 @@ def correction_upload():
         # 1. 清洗列名 (去除空格，转字符串)
         df_s.columns = df_s.columns.astype(str).str.strip()
         df_b.columns = df_b.columns.astype(str).str.strip()
+
+        col_map = {
+            'q_id': pick_best_column(df_b.columns, ['question id', 'q_id', 'question no', 'question number'], ['question', 'id', 'no.']),
+            'ans': pick_best_column(df_b.columns, ['correct answer', 'answer key', 'correct ans'], ['answer', 'ans', 'key']),
+            'score': pick_best_column(df_b.columns, ['score', 'points', 'point value'], ['mark']),
+        }
+        if any(value is None for value in col_map.values()):
+            return jsonify({"error": "Question bank must include Question ID, Correct Answer, and Score columns."}), 400
+
+        correction_storage["col_map"] = col_map
+
+        valid_b = df_b[df_b[col_map['q_id']].notna()].copy()
+        qid_series = valid_b[col_map['q_id']].astype(str).str.strip()
+        valid_b = valid_b[~qid_series.str.lower().isin(['total score', 'total', 'summary', 'statistics', 'nan'])]
+
+        ans_map = dict(zip(valid_b[col_map['q_id']].astype(str), valid_b[col_map['ans']]))
+        score_values = pd.to_numeric(valid_b[col_map['score']], errors='coerce').fillna(0)
+        score_map = dict(zip(valid_b[col_map['q_id']].astype(str), score_values))
+        correction_storage["paper_total_score"] = float(score_values.sum())
+
+        all_info = []
+        q_content_col = pick_best_column(df_b.columns, ['question text', 'question', 'content'], ['text', 'title'])
+        for qid in ans_map:
+            content = "No Content"
+            if q_content_col:
+                match = df_b[df_b[col_map['q_id']].astype(str) == qid]
+                if not match.empty:
+                    content = str(match.iloc[0][q_content_col])
+            all_info.append({"q_id": qid, "content": content})
+        correction_storage["all_questions_info"] = all_info
+
+        err_map = {}
+        q_err_counts = {q: 0 for q in ans_map}
+        name_col = pick_best_column(df_s.columns, ['student name', 'name'], ['student'])
+
+        student_cols_map = {}
+        for col in df_s.columns:
+            digits = ''.join(filter(str.isdigit, col))
+            if digits:
+                student_cols_map[digits] = col
+
+        for _, row in df_s.iterrows():
+            name_value = row[name_col] if name_col else row.iloc[0]
+            name = str(name_value).strip()
+            if not name or name.lower() == 'nan':
+                continue
+
+            wrongs = []
+            score = 0
+
+            for qid_bank, corr_ans in ans_map.items():
+                u_ans = ""
+                if qid_bank in df_s.columns:
+                    u_ans = row[qid_bank]
+                else:
+                    bank_digit = ''.join(filter(str.isdigit, str(qid_bank)))
+                    if bank_digit in student_cols_map:
+                        u_ans = row[student_cols_map[bank_digit]]
+
+                if clean_ans(u_ans) == clean_ans(corr_ans):
+                    score += score_map.get(qid_bank, 0)
+                else:
+                    wrongs.append(qid_bank)
+                    q_err_counts[qid_bank] += 1
+
+            err_map[name] = {"wrongs": wrongs, "score": score}
+
+        correction_storage.update({
+            "error_records": err_map,
+            "question_bank": df_b,
+            "question_error_counts": q_err_counts
+        })
+
+        return jsonify({
+            "status": "success",
+            "students": list(err_map.keys()),
+            "paper_total": correction_storage["paper_total_score"],
+            "question_error_counts": q_err_counts
+        })
         
         # 2. 智能映射题库列名 (针对您的文件做了优化)
         col_map = {}
@@ -720,7 +863,45 @@ def vocabulary(): return render_template("vocab.html")
 def audio_page(): return render_template("audio.html")
 @app.route("/correction")
 @login_required
-def correction_page(): return render_template("correction.html")
+def correction_page():
+    example_files = {
+        "student_sheet": {
+            "name": "Example -- student answer.xlsx",
+            "download_url": url_for("correction_example_download", filename="Example -- student answer.xlsx"),
+            "preview_url": url_for("correction_example_image", filename="stu_ref.png"),
+            "label": "Student Answer Example",
+            "description": "Reference layout for the uploaded student answer sheet."
+        },
+        "bank_sheet": {
+            "name": "Example -- standard version.xlsx",
+            "download_url": url_for("correction_example_download", filename="Example -- standard version.xlsx"),
+            "preview_url": url_for("correction_example_image", filename="bank_ref.png"),
+            "label": "Question Bank Example",
+            "description": "Reference layout for the uploaded comprehensive bank."
+        }
+    }
+    return render_template("correction.html", example_files=example_files)
+
+
+@app.route("/correction/examples/download/<path:filename>")
+@login_required
+def correction_example_download(filename):
+    allowed = {
+        "Example -- student answer.xlsx",
+        "Example -- standard version.xlsx",
+    }
+    if filename not in allowed:
+        abort(404)
+    return send_file(os.path.join(CORRECTION_EXAMPLE_DIR, filename), as_attachment=True, download_name=filename)
+
+
+@app.route("/correction/examples/image/<path:filename>")
+@login_required
+def correction_example_image(filename):
+    allowed = {"stu_ref.png", "bank_ref.png"}
+    if filename not in allowed:
+        abort(404)
+    return send_file(os.path.join(CORRECTION_EXAMPLE_STATIC_DIR, filename))
 
 @app.route("/api/generate_audio_json", methods=["POST"])
 @login_required

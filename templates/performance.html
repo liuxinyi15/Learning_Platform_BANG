@@ -36,6 +36,255 @@
         box-shadow: none; 
         color: #e0e7ff; 
     }
+    .dashboard-toolbar {
+        display: grid;
+        grid-template-columns: minmax(220px, 1fr) minmax(320px, 1.75fr);
+        gap: 22px 28px;
+        width: 100%;
+        padding: 22px 24px;
+        border: 1px solid #e2e8f0;
+        border-radius: 22px;
+        background: linear-gradient(135deg, #f8fbff 0%, #ffffff 55%, #f8fafc 100%);
+        box-shadow: inset 0 1px 0 rgba(255,255,255,0.9);
+    }
+    .dashboard-head {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 18px;
+        margin-bottom: 18px;
+        flex-wrap: wrap;
+    }
+    .dashboard-title {
+        font-size: 1.1rem;
+        font-weight: 900;
+        color: #1e293b;
+        letter-spacing: -0.02em;
+    }
+    .dashboard-copy {
+        margin-top: 4px;
+        font-size: 0.88rem;
+        color: #64748b;
+        font-weight: 600;
+    }
+    .dashboard-status {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 12px;
+        border-radius: 999px;
+        background: #eef2ff;
+        color: #3730a3;
+        font-size: 0.78rem;
+        font-weight: 800;
+    }
+    .dashboard-status-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 999px;
+        background: #4f46e5;
+        box-shadow: 0 0 0 4px rgba(99,102,241,0.12);
+    }
+    .toolbar-label {
+        font-size: 0.72rem;
+        font-weight: 800;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: #94a3b8;
+        margin-bottom: 8px;
+    }
+    .toolbar-group {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        min-width: 0;
+    }
+    .toolbar-group.grow {
+        grid-column: 2;
+        grid-row: 1 / span 2;
+    }
+    .toolbar-select {
+        width: 100%;
+        padding: 12px 14px;
+        border: 1px solid #cbd5e1;
+        border-radius: 14px;
+        background: rgba(255,255,255,0.95);
+        color: #1e293b;
+        font-size: 0.95rem;
+        font-weight: 700;
+        outline: none;
+        transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    .toolbar-select:focus {
+        border-color: #6366f1;
+        box-shadow: 0 0 0 3px rgba(99,102,241,0.12);
+    }
+    .filter-shell { position: relative; }
+    .filter-trigger {
+        width: 100%;
+        min-height: 52px;
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 12px;
+        padding: 12px 14px;
+        border: 1px solid #cbd5e1;
+        border-radius: 14px;
+        background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+        color: #0f172a;
+        font-size: 0.875rem;
+        font-weight: 700;
+        box-shadow: inset 0 1px 0 rgba(255,255,255,0.7);
+        transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    .filter-trigger:hover, .filter-trigger.is-open {
+        border-color: #818cf8;
+        box-shadow: 0 8px 24px rgba(99,102,241,0.12);
+    }
+    .filter-caret {
+        color: transparent;
+        font-size: 0;
+        margin-top: 6px;
+        transition: transform 0.2s;
+    }
+    .filter-caret::before {
+        content: '\25BE';
+        color: #6366f1;
+        font-size: 0.75rem;
+    }
+    .filter-trigger.is-open .filter-caret { transform: rotate(180deg); }
+    .filter-panel {
+        position: absolute;
+        top: calc(100% + 10px);
+        left: 0;
+        width: min(360px, calc(100vw - 64px));
+        padding: 14px;
+        border: 1px solid #dbeafe;
+        border-radius: 18px;
+        background: rgba(255,255,255,0.98);
+        box-shadow: 0 18px 50px rgba(15, 23, 42, 0.12);
+        backdrop-filter: blur(12px);
+        z-index: 20;
+    }
+    .filter-panel.hidden { display: none; }
+    .filter-panel-grid { display: grid; gap: 10px; max-height: 240px; overflow-y: auto; }
+    .filter-option {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 10px 12px;
+        border: 1px solid #e2e8f0;
+        border-radius: 14px;
+        background: #f8fafc;
+        transition: all 0.2s;
+        cursor: pointer;
+    }
+    .filter-option:hover { border-color: #a5b4fc; background: #eef2ff; }
+    .filter-option input { accent-color: #312e81; width: 16px; height: 16px; }
+    .filter-option-title { font-size: 0.875rem; font-weight: 700; color: #334155; }
+    .filter-option-sub { font-size: 0.75rem; color: #94a3b8; }
+    .filter-summary {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-wrap: wrap;
+        flex: 1;
+        min-height: 24px;
+    }
+    .filter-pill {
+        display: inline-flex;
+        align-items: center;
+        padding: 4px 10px;
+        border-radius: 999px;
+        background: #e0e7ff;
+        color: #3730a3;
+        font-size: 0.75rem;
+        font-weight: 700;
+    }
+    .filter-placeholder {
+        color: #94a3b8;
+        font-weight: 700;
+    }
+    .filter-count {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 22px;
+        height: 22px;
+        padding: 0 8px;
+        border-radius: 999px;
+        background: #312e81;
+        color: white;
+        font-size: 0.7rem;
+        font-weight: 800;
+    }
+    .toolbar-helper {
+        font-size: 0.78rem;
+        color: #64748b;
+        font-weight: 600;
+        line-height: 1.45;
+    }
+    .chart-stage {
+        position: relative;
+        min-height: 450px;
+        border-radius: 20px;
+        background:
+            radial-gradient(circle at top left, rgba(224,231,255,0.45), transparent 32%),
+            linear-gradient(180deg, #ffffff 0%, #fcfdff 100%);
+        border: 1px solid #eef2ff;
+        overflow: hidden;
+    }
+    .chart-surface {
+        position: absolute;
+        inset: 0;
+        z-index: 1;
+    }
+    .chart-empty {
+        position: absolute;
+        inset: 0;
+        z-index: 2;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 24px;
+        text-align: center;
+    }
+    .chart-empty.hidden { display: none; }
+    .chart-empty-card {
+        max-width: 420px;
+        padding: 26px 28px;
+        border-radius: 24px;
+        border: 1px solid #e2e8f0;
+        background: rgba(255,255,255,0.9);
+        box-shadow: 0 18px 45px rgba(15, 23, 42, 0.08);
+        backdrop-filter: blur(8px);
+    }
+    .chart-empty-title {
+        font-size: 1.05rem;
+        font-weight: 900;
+        color: #1e293b;
+        margin-bottom: 8px;
+    }
+    .chart-empty-copy {
+        font-size: 0.88rem;
+        line-height: 1.6;
+        color: #64748b;
+        font-weight: 600;
+    }
+    @media (max-width: 1024px) {
+        .dashboard-toolbar {
+            grid-template-columns: 1fr;
+            padding: 18px;
+        }
+        .toolbar-group.grow {
+            grid-column: auto;
+            grid-row: auto;
+        }
+        .dashboard-head {
+            flex-direction: column;
+            align-items: stretch;
+        }
+    }
     
     .chart-card { min-height: 420px; }
     .exam-item { display: flex; justify-content: space-between; align-items: center; padding: 8px; border-bottom: 1px dashed #e2e8f0; font-size: 0.875rem; }
@@ -95,8 +344,14 @@
                     
                     <div class="space-y-5">
                         <div>
+                            <label class="block text-xs font-bold text-slate-500 uppercase mb-2">Grade <span class="text-red-500">*</span></label>
+                            <input type="text" id="newGradeName" placeholder="e.g., Grade 10" 
+                                   class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none focus:ring-2 focus:ring-indigo-900 transition">
+                        </div>
+
+                        <div>
                             <label class="block text-xs font-bold text-slate-500 uppercase mb-2">Class Name <span class="text-red-500">*</span></label>
-                            <input type="text" id="newClassName" placeholder="e.g., Grade 10 - Class A" 
+                            <input type="text" id="newClassName" placeholder="e.g., Class A" 
                                    class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none focus:ring-2 focus:ring-indigo-900 transition">
                         </div>
                         
@@ -174,16 +429,62 @@
 
             <div id="gradeTab" class="hidden space-y-6">
                 <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 chart-card">
-                    <div class="flex justify-between items-center mb-6">
-                        <div class="h-1 bg-green-600 w-12 rounded-full"></div>
-                        <div class="flex items-center gap-2">
-                            <span class="text-xs font-bold text-slate-400 uppercase">Compare Exam Across Classes:</span>
-                            <select id="gradeExamSelect" onchange="updateGradeChart()" class="bg-slate-50 border border-slate-200 text-sm rounded-lg p-2 outline-none">
-                                <option value="">-- Select Exam --</option>
-                            </select>
+                    <div class="dashboard-head">
+                        <div>
+                            <h3 class="dashboard-title">Cross-Class Performance View</h3>
+                            <p class="dashboard-copy">Filter by grade, choose classes, and compare the same exam across your teaching groups.</p>
+                        </div>
+                        <div id="gradeDashboardStatus" class="dashboard-status">
+                            <span class="dashboard-status-dot"></span>
+                            <span>Waiting for filters</span>
                         </div>
                     </div>
-                    <div id="gradeChart" class="w-full h-[450px]"></div>
+                    <div class="mb-6">
+                        <div class="dashboard-toolbar">
+                            <div class="toolbar-group">
+                                <span class="toolbar-label">Grade Scope</span>
+                                <select id="gradeFilterSelect" onchange="handleGradeFilterChange()" class="toolbar-select">
+                                    <option value="">All Grades</option>
+                                </select>
+                                <span class="toolbar-helper">Narrow the dashboard to one year level when needed.</span>
+                            </div>
+                            <div class="toolbar-group grow">
+                                <span class="toolbar-label">Classes To Compare</span>
+                                <div class="filter-shell">
+                                    <button type="button" id="gradeClassTrigger" onclick="toggleGradeClassPanel()" class="filter-trigger">
+                                        <span id="gradeClassSummary" class="filter-summary">
+                                            <span class="filter-placeholder">Choose two or more classes</span>
+                                        </span>
+                                        <span class="filter-caret"></span>
+                                    </button>
+                                    <div id="gradeClassPanel" class="filter-panel hidden">
+                                        <div class="flex items-center justify-between mb-3">
+                                            <span class="text-xs font-bold uppercase tracking-widest text-slate-400">Class Filter</span>
+                                            <button type="button" onclick="clearGradeClassSelection()" class="text-xs font-bold text-indigo-700 hover:underline">Clear</button>
+                                        </div>
+                                        <div id="gradeClassOptions" class="filter-panel-grid"></div>
+                                    </div>
+                                </div>
+                                <span class="toolbar-helper">Select any two or more classes under the chosen grade.</span>
+                            </div>
+                            <div class="toolbar-group">
+                                <span class="toolbar-label">Shared Exam</span>
+                                <select id="gradeExamSelect" onchange="updateGradeChart()" class="toolbar-select">
+                                    <option value="">Select Exam</option>
+                                </select>
+                                <span class="toolbar-helper">Only exams shared by uploaded classes should be compared.</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="chart-stage">
+                        <div id="gradeChartEmpty" class="chart-empty">
+                            <div class="chart-empty-card">
+                                <div id="gradeChartEmptyTitle" class="chart-empty-title">Choose an exam to begin</div>
+                                <div id="gradeChartEmptyCopy" class="chart-empty-copy">Pick a shared exam first, then narrow the comparison by grade or selected classes if needed.</div>
+                            </div>
+                        </div>
+                        <div id="gradeChart" class="chart-surface"></div>
+                    </div>
                 </div>
             </div>
 
@@ -244,6 +545,7 @@
     
     let globalData = null;
     let currentClass = "";
+    let currentClassesMeta = [];
 
     async function init() {
         await loadClasses();
@@ -261,26 +563,183 @@
         const data = await res.json();
         const select = document.getElementById('classSelect');
         select.innerHTML = '';
-        if (data.classes.length > 0) {
-            data.classes.forEach(c => select.add(new Option(c, c)));
+        currentClassesMeta = data.classes || [];
+        if (currentClassesMeta.length > 0) {
+            currentClassesMeta.forEach(c => select.add(new Option(c.display_name, c.id)));
             // 如果原本有选中的班级，保持选中；否则选第一个
-            if (!currentClass || !data.classes.includes(currentClass)) {
-                currentClass = data.classes[0];
+            const classIds = currentClassesMeta.map(c => c.id);
+            if (!currentClass || !classIds.includes(currentClass)) {
+                currentClass = currentClassesMeta[0].id;
             }
             select.value = currentClass;
+            populateGradeFilters();
             refreshList();
         } else {
             select.add(new Option("No classes", ""));
             document.getElementById('examCheckboxes').innerHTML = '<span class="text-xs text-slate-400 p-2">Create a class to start.</span>';
             currentClass = "";
+            populateGradeFilters();
             trendChart.clear();
         }
     }
 
+    function populateGradeFilters() {
+        const gradeSelect = document.getElementById('gradeFilterSelect');
+        if (!gradeSelect) return;
+
+        const previousGrade = gradeSelect.value;
+        gradeSelect.innerHTML = '<option value="">All Grades</option>';
+
+        const grades = [...new Set(currentClassesMeta.map(item => item.grade))].sort();
+        grades.forEach(grade => gradeSelect.add(new Option(grade, grade)));
+
+        if (previousGrade && grades.includes(previousGrade)) {
+            gradeSelect.value = previousGrade;
+        }
+        renderGradeClassOptions();
+    }
+
+    function getSelectedGradeClasses() {
+        return Array.from(document.querySelectorAll('.grade-class-checkbox:checked')).map(input => input.value);
+    }
+
+    function setGradeChartEmptyState(title, copy) {
+        const emptyState = document.getElementById('gradeChartEmpty');
+        const titleNode = document.getElementById('gradeChartEmptyTitle');
+        const copyNode = document.getElementById('gradeChartEmptyCopy');
+        if (!emptyState || !titleNode || !copyNode) return;
+        titleNode.innerText = title;
+        copyNode.innerText = copy;
+        emptyState.classList.remove('hidden');
+    }
+
+    function hideGradeChartEmptyState() {
+        const emptyState = document.getElementById('gradeChartEmpty');
+        if (emptyState) {
+            emptyState.classList.add('hidden');
+        }
+    }
+
+    function updateGradeDashboardStatus() {
+        const status = document.getElementById('gradeDashboardStatus');
+        if (!status) return;
+
+        const grade = document.getElementById('gradeFilterSelect').value;
+        const exam = document.getElementById('gradeExamSelect').value;
+        const selectedCount = getSelectedGradeClasses().length;
+
+        let label = 'Waiting for filters';
+        if (exam && selectedCount > 0 && grade) {
+            label = `${grade} · ${selectedCount} classes · ${exam}`;
+        } else if (exam && selectedCount > 0) {
+            label = `${selectedCount} classes · ${exam}`;
+        } else if (exam && grade) {
+            label = `${grade} · ${exam}`;
+        } else if (exam) {
+            label = exam;
+        } else if (grade && selectedCount > 0) {
+            label = `${grade} · ${selectedCount} classes selected`;
+        } else if (selectedCount > 0) {
+            label = `${selectedCount} classes selected`;
+        } else if (grade) {
+            label = `${grade} selected`;
+        }
+
+        status.innerHTML = '<span class="dashboard-status-dot"></span><span>' + label + '</span>';
+    }
+
+    function updateGradeClassSummary() {
+        const summary = document.getElementById('gradeClassSummary');
+        const selectedIds = getSelectedGradeClasses();
+        const selectedMeta = currentClassesMeta.filter(item => selectedIds.includes(item.id));
+
+        if (selectedMeta.length === 0) {
+            summary.innerHTML = '<span class="filter-placeholder">Choose two or more classes</span>';
+            updateGradeDashboardStatus();
+            return;
+        }
+
+        const visible = selectedMeta.slice(0, 2).map(item => `<span class="filter-pill">${item.display_name}</span>`);
+        const extra = selectedMeta.length > 2 ? `<span class="filter-pill">+${selectedMeta.length - 2} more</span>` : '';
+        const count = `<span class="filter-count">${selectedMeta.length}</span>`;
+        summary.innerHTML = count + visible.join('') + extra;
+        updateGradeDashboardStatus();
+    }
+
+    function renderGradeClassOptions() {
+        const grade = document.getElementById('gradeFilterSelect').value;
+        const currentSelected = getSelectedGradeClasses();
+        const container = document.getElementById('gradeClassOptions');
+        if (!container) return;
+        container.innerHTML = '';
+
+        const filtered = currentClassesMeta.filter(item => !grade || item.grade === grade);
+        if (filtered.length === 0) {
+            container.innerHTML = '<div class="text-xs text-slate-400 px-2 py-3">No classes available for this grade.</div>';
+            updateGradeClassSummary();
+            return;
+        }
+
+        filtered.forEach(item => {
+            const label = document.createElement('label');
+            label.className = 'filter-option';
+            label.innerHTML = `
+                <input type="checkbox" class="grade-class-checkbox" value="${item.id}" ${currentSelected.includes(item.id) ? 'checked' : ''}>
+                <div>
+                    <div class="filter-option-title">${item.class_name}</div>
+                    <div class="filter-option-sub">${item.grade}</div>
+                </div>
+            `;
+            label.querySelector('input').addEventListener('change', () => {
+                updateGradeClassSummary();
+                updateGradeChart();
+            });
+            container.appendChild(label);
+        });
+        updateGradeClassSummary();
+    }
+
+    function handleGradeFilterChange() {
+        renderGradeClassOptions();
+        updateGradeDashboardStatus();
+        updateGradeChart();
+    }
+
+    function toggleGradeClassPanel() {
+        const panel = document.getElementById('gradeClassPanel');
+        const trigger = document.getElementById('gradeClassTrigger');
+        const willOpen = panel.classList.contains('hidden');
+        panel.classList.toggle('hidden', !willOpen);
+        trigger.classList.toggle('is-open', willOpen);
+    }
+
+    function closeGradeClassPanel() {
+        const panel = document.getElementById('gradeClassPanel');
+        const trigger = document.getElementById('gradeClassTrigger');
+        panel.classList.add('hidden');
+        trigger.classList.remove('is-open');
+    }
+
+    function clearGradeClassSelection() {
+        document.querySelectorAll('.grade-class-checkbox').forEach(input => {
+            input.checked = false;
+        });
+        updateGradeClassSummary();
+        closeGradeClassPanel();
+        updateGradeChart();
+    }
+
+    document.addEventListener('click', (event) => {
+        const shell = document.querySelector('.filter-shell');
+        if (!shell || shell.contains(event.target)) return;
+        closeGradeClassPanel();
+    });
+
     async function submitNewClass() {
+        const grade = document.getElementById('newGradeName').value.trim();
         const name = document.getElementById('newClassName').value.trim();
         const studentsRaw = document.getElementById('newClassStudents').value;
-        if (!name) return alert("Please enter a class name!");
+        if (!grade || !name) return alert("Please enter both grade and class name!");
         
         let students = [];
         if (studentsRaw) {
@@ -290,15 +749,16 @@
 
         const res = await fetch('/api/performance/classes', {
             method: 'POST', headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({class_name: name, students: students})
+            body: JSON.stringify({grade: grade, class_name: name, students: students})
         });
         const data = await res.json();
         
         if (data.success) {
             closeCreateClassModal();
+            document.getElementById('newGradeName').value = '';
             document.getElementById('newClassName').value = '';
             document.getElementById('newClassStudents').value = '';
-            currentClass = name; 
+            currentClass = data.class_id;
             await loadClasses();
             await loadGradeExams(); 
         } else {
@@ -308,7 +768,9 @@
 
     async function deleteCurrentClass() {
         if (!currentClass) return;
-        if (confirm(`⚠️ Warning! Are you sure you want to delete the ENTIRE class "${currentClass}" and ALL its exam history? This action cannot be undone.`)) {
+        const selectedMeta = currentClassesMeta.find(item => item.id === currentClass);
+        const label = selectedMeta ? selectedMeta.display_name : currentClass;
+        if (confirm(`⚠️ Warning! Are you sure you want to delete the ENTIRE class "${label}" and ALL its exam history? This action cannot be undone.`)) {
             await fetch(`/api/performance/classes/${encodeURIComponent(currentClass)}`, { method: 'DELETE' });
             currentClass = "";
             await loadClasses();
@@ -399,20 +861,40 @@
         const res = await fetch('/api/performance/grade_overview');
         const data = await res.json();
         const select = document.getElementById('gradeExamSelect');
+        const previousValue = select.value;
+        select.innerHTML = '<option value="">Select Exam</option>';
         if (data.exams) {
             data.exams.forEach(e => select.add(new Option(e, e)));
         }
+        if (previousValue && data.exams && data.exams.includes(previousValue)) {
+            select.value = previousValue;
+        }
+        updateGradeDashboardStatus();
     }
 
     async function updateGradeChart() {
         const examName = document.getElementById('gradeExamSelect').value;
-        if(!examName) return;
+        updateGradeDashboardStatus();
+        if(!examName) {
+            gradeChart.clear();
+            setGradeChartEmptyState('Choose an exam to begin', 'Pick a shared exam first, then narrow the comparison by grade or selected classes if needed.');
+            return;
+        }
+        const grade = document.getElementById('gradeFilterSelect').value;
+        const classIds = getSelectedGradeClasses();
         
         const res = await fetch('/api/performance/compare_grade', {
             method: 'POST', headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({exam_name: examName})
+            body: JSON.stringify({exam_name: examName, grade: grade, class_ids: classIds})
         });
         const data = await res.json();
+        if (!data.stats || data.stats.length === 0) {
+            gradeChart.clear();
+            setGradeChartEmptyState('No matching comparison yet', 'This exam does not have enough overlapping class data for the filters you selected. Try another exam or widen the class scope.');
+            return;
+        }
+
+        hideGradeChartEmptyState();
         
         const classes = data.stats.map(s => s.class);
         const avgs = data.stats.map(s => s.avg_total);
